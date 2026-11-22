@@ -1,0 +1,25 @@
+📝 LEGENDAS OBS
+
+Controla a legenda manual exibida no OBS (Browser Source porta 8788).
+Use APENAS quando explicitamente pedido — a fala normal já gera legenda automática.
+
+FORMATO OBRIGATÓRIO (JSON em uma linha, sem markdown):
+{"mcp_server": "legendas", "tool": "NOME", "arguments": "JSON_ESCAPADO"}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✏️ atualizar_legenda — Atualiza o texto da legenda
+  Quando: "atualiza a legenda", "coloca na legenda", "mostra na tela"
+  {"mcp_server": "legendas", "tool": "atualizar_legenda", "arguments": "{\"texto\": \"TEXTO AQUI\"}"}
+  Limpar: {"mcp_server": "legendas", "tool": "atualizar_legenda", "arguments": "{\"texto\": \"\"}"}
+
+🗑️ limpar_legenda — Remove a legenda da tela
+  Quando: "limpa a legenda", "tira o texto da tela", "remove a legenda"
+  {"mcp_server": "legendas", "tool": "limpar_legenda", "arguments": "{}"}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+REGRAS:
+✅ Use só quando pedido diretamente ("coloca na legenda", "atualiza a legenda")
+✅ A fala normal já gera legenda automática via pipeline — não duplicar
+❌ Não use para toda resposta falada

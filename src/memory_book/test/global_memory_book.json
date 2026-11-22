@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "scope": "global",
+  "conf_uid": "test",
+  "updated_at": "2026-05-07T20:18:06+00:00",
+  "stats": {
+    "updates": 0,
+    "compactions": 0,
+    "manual_edits": 0
+  },
+  "items": []
+}

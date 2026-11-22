@@ -1,0 +1,7 @@
+{
+  "_como_funciona": "Filtro de fala da Célia. Se uma resposta contiver algum item destas listas, ela NÃO é falada. 'palavras': palavras ou expressões (sem acento nem diferença de maiúsculas). 'siglas': siglas, com tolerância a espaços e pontuação entre as letras. 'numeros': números exatos. 'numeros_por_extenso': mapa de número escrito por extenso para o valor. Este arquivo vem VAZIO no repositório público: adicione os termos que você quer bloquear. ATENÇÃO: se o arquivo estiver ausente ou inválido, o filtro bloqueia toda a fala por segurança.",
+  "palavras": [],
+  "siglas": [],
+  "numeros": [],
+  "numeros_por_extenso": {}
+}

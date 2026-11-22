@@ -1,0 +1,236 @@
+#!/usr/bin/env python3
+"""possuir-celia — the hands of the BODY agent (Claude Code or Codex) during a session. Python standard library only.
+
+The persona (Célia) talks; you do NOT speak. You listen to the owner through `next`, act on the body, verify results and keep the persona informed with a sheet.
+
+    possuir-celia start --controller claude|codex [--takeover]   take the lease and the body (one controller at a time; it never releases the world)
+    possuir-celia next [--wait 20] [--coalesce-ms 150]             long poll: the owner's words (fragments merged), controls, open step, sheet status
+    possuir-celia act --shortcut come_here|face_owner|stop [--reply-to SEQ] [--supersede]
+    possuir-celia act --json '{"type":"follow","params":{"player":"PlayerOne","distance":3},"timeout_seconds":25}' [--reply-to SEQ] [--supersede]
+    possuir-celia sheet --json '{"objective":"...","miniquest":"...","body_state":{"v":"...","src":"measured","conf":0.9},"task":"...","last_result":{"v":"...","src":"measured"},
+                                 "risk":"...","framing":{"status":"confirmed|unknown|expired"},"pending":"...","hint":"orientação breve para a persona"}'
+    possuir-celia state | shot [--active-window] | persona | status
+    possuir-celia quest --objective ... --miniquest ... --next ... [--pending "a|b"] [--obstacles "x|y"]
+    possuir-celia log "decisão ou observação"
+    possuir-celia stop                                            end it (also what "acabou a gravação" does, in the central)
+    possuir-celia run-claude [--dry-run] | run-codex [--dry-run]  start the dedicated cheap agent loop in a new process
+
+Exit codes: 0 ok · 3 the possession is over (STOP: do not act) · 4 stale (the command was cancelled: run `next`) · 5 refused (bad lease, ...)
+· 7 the world/session changed (world_epoch_changed: run `state`, re-plan) · 1 other failure. There is no `say`: the agent has no authority over Célia's speech.
+The central keeps the Jev credential; this tool never sees it. The lease lives in var/possession/lease-<controller>.json (0600).
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import shlex
+import subprocess
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+from pathlib import Path
+
+ROOT = Path(os.getenv("CELIA_WORKSPACE", Path(__file__).resolve().parents[1]))
+CENTRAL = os.getenv("CELIA_CENTRAL_URL", "http://127.0.0.1:12393")
+BASE = "/bridge/possession"
+VAR = Path(os.getenv("CELIA_VAR_DIR", ROOT / "var")) / "possession"
+BRIEF = ROOT / "integrations" / "possession" / "AGENT_BRIEF.md"
+CODEX_MODEL, CODEX_EFFORT = "gpt-6-luna", "medium"
+
+
+def out(payload: object, code: int = 0) -> None:
+    print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+    sys.exit(code)
+
+
+def lease_path(controller: str) -> Path:
+    return VAR / f"lease-{controller}.json"
+
+
+def load_lease() -> dict:
+    """The newest lease file: there is only ever one live controller, so 'newest' is unambiguous."""
+    files = sorted(VAR.glob("lease-*.json"), key=lambda p: p.stat().st_mtime, reverse=True) if VAR.is_dir() else []
+    if not files:
+        out({"ok": False, "error": "no_lease", "hint": "run `possuir-celia start --controller claude|codex` first"}, 1)
+    return json.loads(files[0].read_text(encoding="utf-8"))
+
+
+def save_lease(data: dict) -> None:
+    VAR.mkdir(parents=True, exist_ok=True)
+    path = lease_path(data["controller"])
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        json.dump(data, handle, ensure_ascii=False)
+    os.chmod(path, 0o600)
+
+
+def call(method: str, path: str, payload: dict | None = None, lease: str | None = None, timeout: float = 60.0) -> tuple[int, dict]:
+    headers = {"Content-Type": "application/json"}
+    if lease:
+        headers["X-Possession-Lease"] = lease
+    data = None if payload is None else json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    request = urllib.request.Request(f"{CENTRAL}{BASE}{path}", data=data, method=method, headers=headers)
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            return response.status, json.loads(response.read().decode("utf-8") or "{}")
+    except urllib.error.HTTPError as exc:
+        try:
+            body = json.loads(exc.read().decode("utf-8"))
+        except Exception:
+            body = {}
+        return exc.code, body if isinstance(body, dict) else {}
+    except (OSError, ValueError) as exc:
+        return 0, {"error": f"central_unreachable:{type(exc).__name__}"}
+
+
+def interpret(status: int, body: dict) -> None:
+    """Turn HTTP outcomes into the exit codes an agent loop can branch on."""
+    detail = body.get("detail") if isinstance(body.get("detail"), dict) else {}
+    code = detail.get("code") or body.get("error") or ""
+    if status == 0:
+        out({"ok": False, "error": code or "central_unreachable"}, 1)
+    if code == "not_active":
+        out({"ok": False, "active": False, "STOP": "the possession is over: do not act, do not speak, do not restart it"}, 3)
+    if code == "world_epoch_changed":
+        out({"ok": False, "world_epoch_changed": True, "hint": "the world or session changed: run `possuir-celia state`, then re-plan", **detail}, 7)
+    if code == "stale":
+        out({"ok": False, "stale": True, "hint": "a newer instruction exists: run `possuir-celia next` and decide again", **detail}, 4)
+    if status >= 400:
+        out({"ok": False, "status": status, "code": code, "detail": detail.get("detail") or body.get("detail")}, 5 if status in (403, 409) else 1)
+
+
+def cmd_start(a: argparse.Namespace) -> None:
+    status, body = call("POST", "/start", {"controller": a.controller, "takeover": a.takeover})
+    interpret(status, body)
+    save_lease({"controller": a.controller, "lease": body["lease"], "session_id": body["session_id"], "since": 0, "cmd": body.get("command_version", 0),
+                "epoch": body.get("world_epoch")})
+    public = {k: v for k, v in body.items() if k != "lease"}
+    out({"ok": True, **public, "lease_saved": str(lease_path(a.controller))})
+
+
+def cmd_next(a: argparse.Namespace) -> None:
+    lease = load_lease()
+    status, body = call("GET", f"/next?since={lease['since']}&wait={a.wait}&coalesce_ms={a.coalesce_ms}", None, lease["lease"], timeout=a.wait + 10)
+    interpret(status, body)
+    lease["since"] = max(lease["since"], body.get("last_seq", lease["since"]))
+    lease["cmd"] = body.get("command_version", lease.get("cmd", 0))
+    lease["epoch"] = body.get("world_epoch", lease.get("epoch"))
+    save_lease(lease)
+    if not body.get("active", True):
+        out({**body, "STOP": "the possession is over: do not act, do not speak, do not restart it"}, 3)
+    out(body)
+
+
+def cmd_act(a: argparse.Namespace) -> None:
+    lease = load_lease()
+    payload: dict = {"cmd": lease.get("cmd"), "world_epoch": lease.get("epoch"), "supersede": a.supersede}
+    if a.reply_to is not None:
+        payload["reply_to"] = a.reply_to
+    if a.shortcut:
+        payload["shortcut"] = a.shortcut
+    elif a.json:
+        try:
+            payload["action"] = json.loads(a.json)
+        except ValueError:
+            out({"ok": False, "error": "bad_json"}, 1)
+    else:
+        out({"ok": False, "error": "give --shortcut or --json"}, 1)
+    status, body = call("POST", "/act", payload, lease["lease"], timeout=60)
+    interpret(status, body)
+    if body.get("command_version") is not None:
+        lease["cmd"] = body["command_version"]  # a supersede raised it: later actions of THIS plan stay valid
+        save_lease(lease)
+    out(body)
+
+
+def cmd_sheet(a: argparse.Namespace) -> None:
+    try:
+        payload = json.loads(a.json if a.json else sys.stdin.read())
+    except ValueError:
+        out({"ok": False, "error": "bad_json"}, 1)
+    simple("POST", "/sheet", payload)
+
+
+def simple(method: str, path: str, payload: dict | None = None, timeout: float = 20.0) -> None:
+    lease = load_lease()
+    status, body = call(method, path, payload, lease["lease"], timeout=timeout)
+    interpret(status, body)
+    out(body)
+
+
+def cmd_quest(a: argparse.Namespace) -> None:
+    payload = {k: v for k, v in {"objective": a.objective, "miniquest": a.miniquest, "next": a.next}.items() if v is not None}
+    for name in ("pending", "obstacles"):
+        value = getattr(a, name)
+        if value is not None:
+            payload[name] = [part for part in value.split("|") if part.strip()]
+    simple("POST", "/quest", payload)
+
+
+def cmd_stop(a: argparse.Namespace) -> None:
+    status, body = call("POST", "/stop", {})
+    if status == 0:
+        out({"ok": False, "error": body.get("error")}, 1)
+    for path in VAR.glob("lease-*.json") if VAR.is_dir() else []:
+        path.unlink(missing_ok=True)
+    out({"ok": True, **body})
+
+
+def cmd_status(a: argparse.Namespace) -> None:
+    status, body = call("GET", "/stats")
+    if status == 0:
+        out({"ok": False, "error": body.get("error")}, 1)
+    out(body)
+
+
+def brief_prompt(controller: str) -> str:
+    return (f"Você é o agente do CORPO da Célia ({controller}): a persona fala, você NÃO fala. Leia {BRIEF} por inteiro e siga-o. O lease já está salvo: use "
+            f"{ROOT}/bin/possuir-celia. Comece com `state` e `next`, e continue o laço até o comando devolver STOP (código 3). Nunca reinicie a possessão depois do STOP.")
+
+
+def cmd_run(a: argparse.Namespace, which: str) -> None:
+    prompt = brief_prompt(which)
+    if which == "claude":
+        # only the possession tool (and Read for the briefing) is allowed for this process: it cannot edit files or run anything else
+        cmd = ["claude", "-p", "--agent", "celia-possessao", "--model", "haiku", "--max-turns", str(a.max_turns),
+               "--allowedTools", f"Bash({ROOT}/bin/possuir-celia:*)", "Read", "--", prompt]
+    else:
+        cmd = ["codex", "exec", "-m", CODEX_MODEL, "-c", f"model_reasoning_effort={CODEX_EFFORT}", "--skip-git-repo-check", "-C", str(ROOT), prompt]
+    if a.dry_run:
+        out({"ok": True, "dry_run": True, "command": " ".join(shlex.quote(part) for part in cmd)})
+    log = VAR / f"agent-{which}.log"
+    VAR.mkdir(parents=True, exist_ok=True)
+    with log.open("ab") as handle:
+        process = subprocess.Popen(cmd, stdout=handle, stderr=subprocess.STDOUT, start_new_session=True)
+    out({"ok": True, "pid": process.pid, "log": str(log), "note": "the agent runs until the possession ends; `possuir-celia stop` ends it"})
+
+
+def parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(prog="possuir-celia", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = p.add_subparsers(dest="cmd", required=True)
+    s = sub.add_parser("start"); s.add_argument("--controller", required=True, choices=["claude", "codex"]); s.add_argument("--takeover", action="store_true"); s.set_defaults(fn=cmd_start)
+    s = sub.add_parser("next"); s.add_argument("--wait", type=float, default=20.0); s.add_argument("--coalesce-ms", type=float, default=150.0); s.set_defaults(fn=cmd_next)
+    s = sub.add_parser("act"); s.add_argument("--shortcut", choices=["come_here", "face_owner", "stop"]); s.add_argument("--json"); s.add_argument("--reply-to", type=int)
+    s.add_argument("--supersede", action="store_true"); s.set_defaults(fn=cmd_act)
+    s = sub.add_parser("sheet"); s.add_argument("--json"); s.set_defaults(fn=cmd_sheet)
+    s = sub.add_parser("state"); s.set_defaults(fn=lambda a: simple("GET", "/state"))
+    s = sub.add_parser("shot"); s.add_argument("--active-window", action="store_true"); s.set_defaults(fn=lambda a: simple("POST", "/shot", {"active_window": a.active_window}, 30))
+    s = sub.add_parser("persona"); s.set_defaults(fn=lambda a: simple("GET", "/persona"))
+    s = sub.add_parser("quest")
+    for name in ("objective", "miniquest", "next", "pending", "obstacles"):
+        s.add_argument(f"--{name}")
+    s.set_defaults(fn=cmd_quest)
+    s = sub.add_parser("log"); s.add_argument("text"); s.set_defaults(fn=lambda a: simple("POST", "/log", {"text": a.text}))
+    s = sub.add_parser("stop"); s.set_defaults(fn=cmd_stop)
+    s = sub.add_parser("status"); s.set_defaults(fn=cmd_status)
+    for which in ("claude", "codex"):
+        s = sub.add_parser(f"run-{which}"); s.add_argument("--dry-run", action="store_true"); s.add_argument("--max-turns", type=int, default=3000)
+        s.set_defaults(fn=lambda a, w=which: cmd_run(a, w))
+    return p
+
+
+if __name__ == "__main__":
+    args = parser().parse_args()
+    args.fn(args)

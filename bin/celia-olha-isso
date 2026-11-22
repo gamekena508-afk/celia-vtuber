@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Meta+N (atalho global do KDE) -> "Célia, olha isso agora".
+# Faz POST em /bridge/direct-address na porta local. Não depende de fala pendente.
+# Cada disparo grava uma linha em var/log/gesto-meta-n.log, mesmo se a Célia estiver
+# desligada (http=000): é a prova de que teclado -> KDE -> comando aconteceu.
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+URL="${CELIA_DIRECT_ADDRESS_URL:-http://127.0.0.1:12393/bridge/direct-address}"
+LOG="${CELIA_GESTO_LOG:-$DIR/var/log/gesto-meta-n.log}"
+mkdir -p "$(dirname "$LOG")"
+BODY='{"gesture":"look","source":"kde-meta-n"}'
+OUT="$(mktemp)"
+CODE="$(curl -s -m 4 -o "$OUT" -w '%{http_code}' -X POST \
+  -H 'Content-Type: application/json' -d "$BODY" "$URL")"
+RESP="$(head -c 300 "$OUT" | tr '\n' ' ')"
+rm -f "$OUT"
+printf '%s http=%s url=%s body=%s resp=%s\n' "$(date -Is)" "$CODE" "$URL" "$BODY" "$RESP" >> "$LOG"
+if [ "$CODE" != "200" ] && command -v notify-send >/dev/null 2>&1; then
+  notify-send -a Célia -t 3000 "Célia" "Meta+N não chegou (http=$CODE). A Célia está ligada?"
+fi
+exit 0

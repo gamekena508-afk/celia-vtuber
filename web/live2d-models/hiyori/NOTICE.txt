@@ -1,0 +1,8 @@
+Hiyori Momose (Hiyori) — modelo de amostra oficial da Live2D Inc.
+
+Este modelo e distribuido pela Live2D como material de amostra gratuito. O uso esta sujeito ao
+"Free Material License Agreement" e aos "Terms of Use" da Live2D:
+  https://www.live2d.com/en/learn/sample/
+Usuarios gerais e empresas de pequeno porte podem usa-lo, inclusive comercialmente, conforme esse acordo.
+Este repositorio o inclui apenas como exemplo para demonstrar a interface. Os direitos pertencem a Live2D Inc.
+Se voce nao se enquadra no acordo, remova esta pasta e use outro modelo.

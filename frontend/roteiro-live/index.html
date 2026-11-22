@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <title>Roteiro Live — Célia</title>
+    <link rel="stylesheet" href="/roteiro/style.css?v=roteiro-botao-dono-20261001" />
+  </head>
+  <body>
+    <main class="teleprompter" aria-live="polite">
+      <header class="topbar">
+        <button id="back-to-list" class="back-to-list" type="button" hidden>← ROTEIROS</button>
+        <div class="live-status"><span class="live-dot" aria-hidden="true"></span><span id="connection" class="connection">CONECTANDO</span></div>
+        <span id="take-state" class="take-state">TOMADA —</span>
+        <span id="profile" class="profile" hidden>—</span>
+        <button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="advanced-controls">CONTROLES</button>
+      </header>
+      <p id="force-stop-message" class="force-stop" role="status" aria-live="assertive" hidden></p>
+
+      <section class="title-block" aria-label="Identificação do roteiro">
+        <p class="eyebrow">ROTEIRO AO VIVO</p>
+        <h1 id="script-title">ROTEIRO LIVE</h1>
+        <p id="script-subtitle" class="subtitle">carregando…</p>
+      </section>
+
+      <section class="route-block" aria-label="Rota atual">
+        <span class="label">CAMINHO</span>
+        <div id="route" class="route">—</div>
+      </section>
+
+      <section id="inactive" class="inactive" hidden>
+        <strong>ESCOLHE O ROTEIRO</strong>
+        <span id="picker-hint">Carregando a lista…</span>
+        <div id="picker-list" class="picker-list"></div>
+        <p id="picker-message" class="picker-message" role="status" aria-live="polite"></p>
+      </section>
+
+      <section id="timeline" class="timeline" aria-label="Roteiro ao vivo">
+        <div id="history" class="history"></div>
+        <article id="current" class="current-card">
+          <p class="label">AGORA</p>
+          <h2 id="beat-title">Aguardando roteiro</h2>
+          <div id="script-lines" class="script-lines"></div>
+        </article>
+        <article id="next" class="next-card">
+          <p class="label">A SEGUIR</p>
+          <h3 id="next-title">—</h3>
+          <div id="next-lines" class="next-lines"></div>
+        </article>
+      </section>
+
+      <section class="dialogue" aria-label="Transcrição">
+        <div class="speaker-block criador-block">
+          <p class="speaker">CRIADOR <span id="criador-script-status" class="state">—</span></p>
+          <p id="criador-partial" class="partial"></p>
+          <p id="criador-final" class="final"></p>
+        </div>
+        <div class="speaker-block celia-block">
+          <p class="speaker">CÉLIA <span id="celia-state" class="state">IDLE</span></p>
+          <p id="celia-text" class="final"></p>
+        </div>
+      </section>
+
+      <section id="branches" class="branches" hidden>
+        <p class="label">ESCOLHER O RESULTADO</p>
+        <div id="branch-buttons" class="branch-buttons"></div>
+      </section>
+
+      <footer id="controls" class="controls">
+        <div class="control-row primary-row">
+          <button id="back" type="button">VOLTAR FALA</button>
+          <button id="forward-line" type="button">AVANÇAR FALA</button>
+          <button id="retake" type="button">REFAZER MINHA</button>
+          <button id="mark-good" type="button">TOMADA BOA</button>
+          <button id="mark-discarded" type="button">DESCARTAR</button>
+          <button id="live" type="button" class="primary">AO VIVO</button>
+          <button id="next-control" type="button">PRÓXIMO</button>
+          <span id="follow-state" class="follow-state">AUTO</span>
+        </div>
+        <div id="advanced-controls" class="advanced-controls" hidden>
+          <div class="control-row recovery-row">
+            <button id="play-expected" type="button">CÉLIA, SUA VEZ</button>
+            <button id="repeat-celia" type="button">TOCAR NOVAMENTE</button>
+            <button id="regenerate-voice" type="button">GERAR VOZ</button>
+            <button id="new-response" type="button">OUTRA RESPOSTA</button>
+          </div>
+          <div class="control-row game-row">
+            <button id="game-pause" type="button">PAUSAR JOGO</button>
+            <button id="game-resume" type="button">CONTINUAR JOGO</button>
+            <button id="game-retry" type="button">TENTAR FALA</button>
+            <button id="game-skip" type="button">SEM COMENTÁRIO</button>
+            <button id="open-ttt" type="button">ABRIR VELHA</button>
+            <button id="open-checkers" type="button">ABRIR DAMAS</button>
+            <button id="open-chess" type="button">ABRIR XADREZ</button>
+          </div>
+          <div class="control-row input-row">
+            <input id="word-anchor" type="text" maxlength="80" placeholder="voltar para palavra/trecho" />
+            <button id="back-word" type="button">IR À ÂNCORA</button>
+            <input id="marker-note" type="text" maxlength="160" placeholder="nota do marcador" />
+            <button id="add-marker" type="button">MARCAR</button>
+            <span id="recording-clock" class="follow-state">00:00</span>
+          </div>
+          <details class="shortcut-settings">
+            <summary>ATALHOS</summary>
+            <div class="shortcut-grid">
+              <label>Voltar fala <input id="shortcut-back" data-shortcut="back" type="text" /></label>
+              <label>Refazer minha <input id="shortcut-retake" data-shortcut="retake" type="text" /></label>
+              <label>Tomada boa <input id="shortcut-good" data-shortcut="good" type="text" /></label>
+              <label>Célia, sua vez <input id="shortcut-celia" data-shortcut="celia" type="text" /></label>
+              <label>Force-stop <input id="shortcut-stop" data-shortcut="stop" type="text" /></label>
+            </div>
+          </details>
+        </div>
+      </footer>
+    </main>
+    <script src="/roteiro/app.js?v=roteiro-botao-dono-20261001"></script>
+  </body>
+</html>

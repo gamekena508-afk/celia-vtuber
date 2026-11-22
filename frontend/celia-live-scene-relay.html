@@ -1,0 +1,62 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Ponte local da cena</title></head><body style="margin:0"><iframe id="celia-source" title="Célia principal" allow="autoplay" style="width:480px;height:600px;border:0"></iframe><script>
+(() => {
+  const requestedOrigin=new URLSearchParams(location.search).get('parentOrigin');
+  const parentOrigin = requestedOrigin==='http://127.0.0.1:12393'?requestedOrigin:'http://127.0.0.1:12593';
+  const sceneId=crypto.randomUUID();
+  document.getElementById('celia-source').src='/?corpo=2d&palco=1&fundo=cena&liveOutput=1&celiaScene=1&sceneId='+encodeURIComponent(sceneId);
+  let audioReady=false, enabling=false;
+  async function enableAudio({gesture=false}={}){
+    if(enabling)return;
+    const live=document.getElementById('celia-source').contentWindow.celiaLive;
+    if(!live?.habilitarAudio)return;
+    const state=live.estado?.()||{};
+    if(audioReady&&state.lease){if(gesture)live.retomarPendente?.();return;}
+    enabling=true;
+    try{await live.habilitarAudio();audioReady=true;if(gesture)live.retomarPendente?.();parent.postMessage({source:'celia-live-scene',type:'audio-ready',ok:true},parentOrigin);}
+    catch(_){audioReady=false;/* Retomar quando o contexto voltar a permitir áudio. */}
+    finally{enabling=false;}
+  }
+  document.addEventListener('pointerdown',()=>enableAudio({gesture:true}),{capture:true});
+  setInterval(()=>{const state=document.getElementById('celia-source').contentWindow.celiaLive?.estado?.();document.documentElement.dataset.audio=JSON.stringify(state||{});enableAudio();},2500);
+  const channel = new BroadcastChannel('celia-live-scene-v1');
+  let lastLease = 0;
+  channel.onmessage = event => {
+    if (event.data?.type !== 'pose' || event.data.sceneId !== sceneId) return;
+    if (event.data.lease) lastLease=Date.now();
+    else if (Date.now()-lastLease<3000) return;
+    parent.postMessage({source:'celia-live-scene', ...event.data}, parentOrigin);
+  };
+  function requestPose(){channel.postMessage({type:'request-pose',sceneId});}
+  setInterval(requestPose, 2000); requestPose();
+  async function status(){try{const response=await fetch('/bridge/live/status',{cache:'no-store'});if(response.ok)parent.postMessage({source:'celia-live-scene',type:'status',status:await response.json()},parentOrigin);}catch(_){parent.postMessage({source:'celia-live-scene',type:'status',status:null},parentOrigin);}}
+  setInterval(status,2000);status();
+  // Legenda da fala da Célia: mesma fonte e ritmo do estúdio mobile (/mobile/studio/status a cada 220 ms).
+  let lastCaption=null;
+  function publicCaption(text){const folded=String(text||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return /conexao de conversa esta ocupada|error calling the chat endpoint|internal agent error|rate limit exceeded|no active credentials|configured context budget|todos os provedores da fila falharam|todas as (?:chaves(?: de)? api|rotas de ia)|all api keys|playback_ack_timeout/.test(folded)?'':String(text||'');}
+  async function caption(){
+    const live=document.getElementById('celia-source').contentWindow.celiaLive?.estado?.();
+    if(live?.falando){
+      parent.postMessage({source:'celia-live-scene',type:'caption',text:publicCaption(live.texto||''),elapsed_s:live.tempo,duration_s:live.duracao,speech_id:live.speech_id},parentOrigin);
+      lastCaption=live.texto||'';return;
+    }
+    if(lastCaption!==''){lastCaption='';parent.postMessage({source:'celia-live-scene',type:'caption',text:''},parentOrigin);}
+  }
+  setInterval(caption,100);caption();
+  window.addEventListener('message', async event => {
+    if(event.origin!==parentOrigin || event.source!==parent)return;
+    if(event.data?.type==='enable-audio'){enableAudio({gesture:event.data.gesture===true});return;}
+    if(event.data?.type==='start-reader'){
+      try{const response=await fetch('/bridge/live/reader/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({authorized:event.data.authorized===true,live_confirmed:event.data.live_confirmed===true,handle:String(event.data.handle||'')})});const data=await response.json();parent.postMessage({source:'celia-live-scene',type:'reader-result',ok:response.ok,message:response.ok?'Conectando chat; aguardando confirmação do TikTok.':String(data.detail||'Falha ao conectar')},parentOrigin);await status();}catch(_){parent.postMessage({source:'celia-live-scene',type:'reader-result',ok:false,message:'Célia indisponível.'},parentOrigin);}return;
+    }
+    if(event.data?.type==='activate-live'){
+      try{const response=await fetch('/bridge/live/enable',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'live'})});const result=await response.json();parent.postMessage({source:'celia-live-scene',type:'activate-result',ok:response.ok&&result.mode==='live'},parentOrigin);await status();}catch(_){parent.postMessage({source:'celia-live-scene',type:'activate-result',ok:false},parentOrigin);}return;
+    }
+    if(event.data?.type!=='test-character')return;
+    try {
+      const response=await fetch('/bridge/live/test-character',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({character:event.data.character,text:event.data.text})});
+      const result=await response.json();
+      parent.postMessage({source:'celia-live-scene',type:'test-result',ok:response.ok && result.ok!==false},parentOrigin);
+    }catch(error){parent.postMessage({source:'celia-live-scene',type:'test-result',ok:false},parentOrigin);}
+  });
+})();
+</script></body></html>

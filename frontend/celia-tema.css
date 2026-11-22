@@ -1,0 +1,47 @@
+/* Tema escuro da Célia — correções que o bundle compilado não traz.
+ *
+ * Medido em 2026-08-24: `grep -c '::selection' frontend/assets/main-QEkl09-0.css`
+ * devolveu 0. Sem regra própria, o navegador pintava a seleção com o realce
+ * claro padrão do sistema, que sobre a interface preta aparecia como um bloco
+ * branco. Este arquivo é carregado depois do CSS compilado, então vence sem
+ * precisar recompilar o bundle.
+ */
+
+:root {
+  color-scheme: dark;
+  --celia-selection-bg: rgba(72, 140, 255, .45);
+  --celia-selection-fg: #ffffff;
+}
+
+::selection {
+  background: var(--celia-selection-bg);
+  color: var(--celia-selection-fg);
+  text-shadow: none;
+}
+
+::-moz-selection {
+  background: var(--celia-selection-bg);
+  color: var(--celia-selection-fg);
+  text-shadow: none;
+}
+
+/* Campos de texto herdam o mesmo realce: o caminho por onde o Pai mais
+ * seleciona texto é a caixa de mensagem, e ela é um input separado. */
+input::selection,
+textarea::selection {
+  background: var(--celia-selection-bg);
+  color: var(--celia-selection-fg);
+}
+
+/* Cores mais vivas no Pet E no Live Mode (Pet: pedido do Pai, 2026-10-06; Live Mode igual ao Pet: pedido do Pai, 2026-10-18 —
+ * "no Pet a cor fica mais viva, quero o mesmo no Live Mode").
+ * As texturas da Celia sao quase brancas de proposito e o VTube Studio so
+ * tinge 12 pecas (ver celia-cores.js); sem isto o resto fica lavado.
+ * Uma regra so, mesmos valores nas duas janelas. Ajuste fino: --celia-saturacao / --celia-contraste. */
+html {
+  --celia-saturacao: 1.45;
+  --celia-contraste: 1.04;
+}
+#canvas {
+  filter: saturate(var(--celia-saturacao)) contrast(var(--celia-contraste));
+}

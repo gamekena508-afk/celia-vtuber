@@ -1,0 +1,4 @@
+three 0.186.1 (npm pack, MIT) -> libs/three/
+@pixiv/three-vrm 3.5.5 (npm pack, MIT) -> libs/three-vrm/three-vrm.module.min.js
+@pixiv/three-vrm-animation 3.5.5 (npm pack, MIT) -> libs/three-vrm/three-vrm-animation.module.min.js
+baixado 2026-10-06 por Kurt para a bancada 3D (plano Celia 3D, fatia 2). Sem CDN: importmap local.

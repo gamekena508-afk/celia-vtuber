@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Célia • Sala de Monitoramento</title>
+<style>
+:root{color-scheme:dark;--bg:#080d1b;--surface:#111b31;--line:#253551;--text:#eff6ff;--muted:#96a9c3;--a:#61d8ec;--good:#65d7af;--warn:#ffbf77}
+*{box-sizing:border-box}body{margin:0;font:15px/1.52 ui-sans-serif,system-ui,Segoe UI,sans-serif;color:var(--text);background:radial-gradient(1100px 620px at 3% 0%,#172c51 0%,transparent 62%),var(--bg)}
+main{max-width:1220px;margin:auto;padding:35px 22px 65px}header{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:28px}
+.eyebrow{font-size:11px;font-weight:750;letter-spacing:.21em;color:var(--a);text-transform:uppercase}h1{font-size:clamp(28px,4vw,45px);margin:7px 0 9px;line-height:1.12;letter-spacing:-.045em}h2{font-size:19px;letter-spacing:-.022em;margin:0 0 15px}.lead{max-width:700px;color:var(--muted);margin:0}.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.chip,.link{display:inline-flex;align-items:center;gap:7px;padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:#101b2e;color:var(--text);text-decoration:none;font-size:12px}.chip{color:var(--good)}.link:hover{border-color:var(--a)}.dot{background:var(--good);width:7px;height:7px;border-radius:50%}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}.metric,.panel{background:linear-gradient(160deg,#13213a,#0e192b);border:1px solid var(--line);border-radius:17px;box-shadow:0 12px 30px #0002}.metric{padding:18px 20px;min-height:140px}.metric .lbl{font-size:12px;color:var(--muted)}.metric strong{display:block;font-size:35px;letter-spacing:-.05em;margin:8px 0 5px;font-variant-numeric:tabular-nums}.small{font-size:12px;color:var(--muted)}
+.bar{height:5px;background:#26354e;border-radius:99px;overflow:hidden;margin:12px 0 0}.bar>span{display:block;height:100%;background:linear-gradient(90deg,#55bdde,#6be0b8);transition:width .4s}
+.layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(320px,1fr);gap:18px;margin:18px 0}.panel{padding:22px}.twocol{display:grid;grid-template-columns:1fr 1fr;gap:10px}.service{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 12px;border-radius:10px;background:#0b1629}.service .name{font-size:13px}.state{color:var(--good);font-size:12px}.state.off{color:var(--warn)}.note{border-left:2px solid var(--a);padding-left:12px;color:var(--muted);font-size:12px;margin-top:15px}
+.stats{display:flex;gap:23px;flex-wrap:wrap;padding-bottom:15px;border-bottom:1px solid var(--line)}.stats b{font-size:22px;display:block;line-height:1.3}.stats span{color:var(--muted);font-size:12px}
+.event{display:grid;grid-template-columns:75px 1fr 45px 64px;gap:10px;padding:9px 0;border-bottom:1px solid #243247;font-size:12px;align-items:center}.event:last-child{border-bottom:0}.event .time,.event .ms{color:var(--muted)}.event .model{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.event .code{font-weight:750;color:var(--good)}.event .code.err{color:var(--warn)}
+.lesson{padding:13px 0;border-bottom:1px solid var(--line)}.lesson:last-child{border:0}.lesson-title{font-weight:680;font-size:13px}.lesson p{margin:4px 0;color:var(--muted);font-size:12px}.evidence{font-size:11px;color:var(--a)}.pill{margin-left:8px;border:1px solid var(--line);padding:2px 7px;border-radius:8px;color:var(--muted);font-size:10px}.apps{display:grid;gap:6px}.app{display:flex;justify-content:space-between;gap:12px;padding:8px 10px;font-size:12px;background:#0b1629;border-radius:8px}.app span:last-child{color:var(--muted);font-variant-numeric:tabular-nums}.external{display:grid;gap:10px}.external div{font-size:12px;color:var(--muted);padding:11px 12px;background:#0b1629;border-radius:9px}.foot{color:var(--muted);font-size:12px;margin-top:22px}code{color:#b1e0f5}
+@media(max-width:950px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.layout{grid-template-columns:1fr}}@media(max-width:550px){main{padding:24px 13px}.grid{gap:9px}.metric{padding:14px;min-height:127px}.metric strong{font-size:29px}.panel{padding:16px}.twocol{grid-template-columns:1fr}.event{grid-template-columns:62px 1fr 32px 47px;gap:5px}}
+</style></head>
+<body><main>
+<header><div><div class="eyebrow">CELIA / SISTEMA VIVO / TELEMETRIA REAL</div><h1>Sala de Monitoramento</h1><p class="lead">Saúde do computador, fluxo da Célia e lições auditáveis. Um painel de observação: não altera pesos, memórias nem o estado de outros programas.</p></div><div class="actions"><span class="chip"><span class="dot"></span> Somente neste computador</span><a class="link" href="http://127.0.0.1:12393/observatory.html" target="_blank" rel="noreferrer">Observatory técnico</a></div></header>
+<section class="grid" aria-label="Indicadores">
+<div class="metric"><div class="lbl">CPU • utilização</div><strong id="cpu">—</strong><div class="small">Leitura do Windows</div><div class="bar"><span id="cpuBar" style="width:0"></span></div></div>
+<div class="metric"><div class="lbl">RAM • utilização</div><strong id="ram">—</strong><div id="ramDetail" class="small">Leitura do Windows</div><div class="bar"><span id="ramBar" style="width:0"></span></div></div>
+<div class="metric"><div class="lbl">GPU • utilização</div><strong id="gpu">—</strong><div id="gpuDetail" class="small">Lendo nvidia-smi</div><div class="bar"><span id="gpuBar" style="width:0"></span></div></div>
+<div class="metric"><div class="lbl">Atividade da IA • 1h</div><strong id="calls">—</strong><div class="small">Registros da fila, não experiências subjetivas</div><div class="bar"><span id="callsBar" style="width:0"></span></div></div>
+</section>
+<section class="layout"><div class="panel"><h2>Evolução observável — 1h</h2><div class="stats"><div><b id="oks">—</b><span>Respostas OK</span></div><div><b id="errors">—</b><span>Tentativas não OK</span></div><div><b id="local">—</b><span>Gemma local OK</span></div></div><p class="note">São eventos medidos no ledger. “Evolução” não significa que o modelo foi treinado, nem que aprendeu permanentemente.</p><div id="events"></div></div>
+<div class="panel"><h2>Serviços e estado</h2><div class="twocol" id="services"></div><p class="note" id="discord">Discord: aguardando dados do adaptador</p><p class="small">A checagem verifica as portas locais; não prova a qualidade das respostas do modelo.</p></div></section>
+<section class="layout"><div class="panel"><h2>Lições aprendidas <span class="pill" id="reviewed">—</span></h2><div id="lessons"></div><p class="note">São lições de engenharia registradas em arquivo, cada uma com evidência e status de revisão. Não entram automaticamente na personalidade da Célia.</p></div><div><div class="panel" style="margin-bottom:18px"><h2>Aplicativos ativos • RAM</h2><div id="apps" class="apps"></div><p class="small">Processos agrupados por nome; não inspeciona o conteúdo de janelas.</p></div><div class="panel"><h2>Sinais externos</h2><div id="external" class="external"></div><p class="small">Integrações futuras só devem aparecer como ativas quando retornarem dados reais.</p></div></div></section>
+<footer class="foot">Atualização local a cada 5 segundos • <span id="updated">Aguardando primeira leitura</span> • localhost:12395 • Fonte primária: sistema Windows + logs da Célia.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+function put(id,value){$(id).textContent=String(value)}
+function bar(id,value){$(id).style.width=Math.max(0,Math.min(100,Number(value)||0))+'%'}
+function cell(tag,classname,value){const el=document.createElement(tag);if(classname)el.className=classname;el.textContent=String(value);return el}
+function erase(id){const el=$(id);while(el.firstChild)el.removeChild(el.firstChild);return el}
+function render(s){
+ put('cpu',Math.round(s.system.cpu_pct)+'%');bar('cpuBar',s.system.cpu_pct);
+ put('ram',Math.round(s.system.ram_pct)+'%');put('ramDetail',s.system.ram_used_gb+' / '+s.system.ram_total_gb+' GB');bar('ramBar',s.system.ram_pct);
+ const gpu=s.system.gpu;put('gpu',gpu?Math.round(gpu.util_pct)+'%':'N/D');put('gpuDetail',gpu?gpu.vram_used_mb+' / '+gpu.vram_total_mb+' MB VRAM • '+gpu.temperature_c+'°C':'GPU não detectada');bar('gpuBar',gpu?gpu.util_pct:0);
+ const e=s.evolution;put('calls',e.calls);put('oks',e.ok);put('errors',e.errors);put('local',e.gemma_local_ok);bar('callsBar',e.calls?100*e.ok/e.calls:0);
+ const svc=erase('services');for(const x of s.services){const item=cell('div','service','');item.append(cell('span','name',x.name+' :'+x.port));item.append(cell('span',x.online?'state':'state off',x.online?'Ativo':'Offline'));svc.append(item)}
+ put('discord','Discord: '+s.discord.status);
+ const events=erase('events');for(const x of e.events){const row=cell('div','event','');row.append(cell('span','time',x.time));row.append(cell('span','model',x.model));row.append(cell('span',x.code==='OK'?'code':'code err',x.code));row.append(cell('span','ms',(x.ms||0)+' ms'));events.append(row)}if(!e.events.length)events.append(cell('p','small','Nenhuma chamada registrada na última hora.'));
+ put('reviewed',s.lesson_reviewed+'/'+s.lessons.length+' revisadas');
+ const lessonList=erase('lessons');for(const x of s.lessons){const item=cell('div','lesson','');item.append(cell('div','lesson-title',x.title));item.append(cell('p','',x.summary));item.append(cell('div','evidence',(x.reviewed?'Revisada':'Pendente')+' • '+x.evidence));lessonList.append(item)}
+ const apps=erase('apps');for(const x of s.system.apps){const item=cell('div','app','');item.append(cell('span','',x.name));item.append(cell('span','',x.ram_mb+' MB'));apps.append(item)}
+ const external=erase('external');for(const [key,label] of [['news','Notícias'],['iss','Satélites / ISS'],['windows','Janelas']])external.append(cell('div','',label+' — '+s.external[key]));
+ put('updated','Atualizado '+s.generated_at);
+}
+async function refresh(){try{const response=await fetch('/api/status',{cache:'no-store'});if(!response.ok)throw new Error(response.status);render(await response.json())}catch(err){put('updated','Falha de leitura local: '+String(err.message))}}
+refresh();setInterval(refresh,5000);
+</script></body></html>

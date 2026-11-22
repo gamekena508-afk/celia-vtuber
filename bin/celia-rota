@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Atalho: diagnóstico do roteamento (contas, ledger, fila, DECISÃO) sem chamar modelo. Ex.: bin/celia-rota   |   bin/celia-rota simular todos
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+exec "$DIR/.venv/bin/python" "$DIR/tools/celia_rota.py" "$@"

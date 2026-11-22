@@ -1,0 +1,13 @@
+const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');
+const code=fs.readFileSync('tools/mode-lab/ui/model-sync.js','utf8').replaceAll('export function','function');
+const env={};vm.createContext(env);vm.runInContext(code,env);
+const ids=['ParamMouthOpenY','ParamMouthForm','Param123','ParamPhysicsRare','Param82','Param83','Param353','Param354'];
+const values=new Float32Array(ids.length),minimumValues=new Float32Array(ids.length);
+const model={ids,model:{parameters:{values,minimumValues}}};
+const original=Object.fromEntries(ids.map((id,i)=>[id,(i+1)/10]));
+env.applyOriginalPose(model,original);
+ids.forEach((id,i)=>assert.ok(Math.abs(values[i]-original[id])<1e-6));
+env.whiteInnerEars(model);
+for(let i=0;i<4;i++)assert.ok(Math.abs(values[i]-original[ids[i]])<1e-6);
+for(let i=4;i<8;i++)assert.equal(values[i],minimumValues[i]);
+console.log('PASS: todos os parâmetros originais (incluindo boca/física) copiados; exceção limitada ao interior das orelhas.');

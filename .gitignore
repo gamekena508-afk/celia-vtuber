@@ -1,0 +1,193 @@
+# agente: claude | 2026-08-11
+# Decisão 5 do painel travado: git sim, com secrets/, var/, _archive/,
+# node_modules/ e .venv/ fora. Regra que atravessa o plano inteiro: um
+# arquivo mora num lugar só — segredo não entra em commit nenhum.
+
+# segredos — vivem só em secrets/, nunca versionados
+# `secrets/` inteiro fica fora, MENOS o exemplo sem valor. Precisa ser
+# `secrets/*` e nao `secrets/`: regra de diretorio nao permite re-incluir
+# arquivo de dentro dele.
+secrets/*
+!secrets/.env.example
+*.env
+!*.env.example
+# `*.env` NÃO cobre `.env.bak-<data>`: o nome não termina em .env. Achado
+# em 2026-08-11 com 11 chaves em texto claro, prestes a entrar num commit.
+.env.bak*
+*.env.bak*
+.env.backup*
+
+
+# estado que muda a cada boot: logs, spool, cache, chat_history
+var/
+
+# material cru ainda não decidido/absorvido pela árvore nova
+_resgate/
+_archive/
+
+# ambientes virtuais — cada extensão tem o seu, nenhum entra no git
+.venv/
+**/.venv/
+.venv-isolated/
+**/.venv-isolated/
+venv/
+**/venv/
+
+# node — mindcraft tem npm próprio
+node_modules/
+**/node_modules/
+
+# python
+__pycache__/
+**/__pycache__/
+*.pyc
+.ruff_cache/
+
+# saída de execução / evidência temporária (não é o produto)
+output/
+screen-evidence/
+_arquivo/
+
+# backups mecânicos do protocolo de autorização — o git já é o histórico
+.contract-backup/
+
+# estado de execução (muda a cada boot, não é o produto)
+singleton_state.json
+chat_history/
+logs/
+cache/
+analises_clipboard/
+clipboard_analyses/
+
+# editor
+.vscode/
+.claudeignore
+# `.claude/` fica fora, MENOS as skills — elas SAO produto e viajam com o
+# repo. Precisa ser `.claude/*` e nao `.claude/`: regra de diretorio nao
+# permite re-incluir o que esta dentro dele.
+.claude/*
+!.claude/skills/
+
+# artefatos grandes de terceiros que ainda não têm lugar definitivo
+*.wav
+*.zip
+
+# cache de navegador embutido (Edge WebView2, era Windows): 309 MB
+.webview_data/
+mcp_vision_analyses/
+upgrade_codes/
+
+# token de autenticação do plugin do VTube Studio. Fica NO LUGAR (10 scripts
+# do tracker leem daí), mas nunca entra em commit. chmod 600.
+vts_token.txt
+
+# Os 6 modelos Live2D resgatados — a FONTE PESADA da decisão 2(b).
+# Ficam NO DISCO (backup insubstituível do rosto dela), mas fora do git:
+# cada .moc3 tem 167 MB, acima do limite duro de 100 MB do GitHub — que
+# rejeita o push (medido: pre-receive hook declined em 2026-08-11).
+# Também têm licença própria do autor, não a MIT deste repo.
+#
+# CORRIGIDO 2026-09-01: o padrão abaixo era só `celia_*_vts/`, que exige
+# `celia_` + algo + `_vts` e por isso NÃO pegava a pasta real `celia_vts/`.
+# Faltava um sublinhado, e por causa disso o rig de 159,93 MB entrou no
+# commit 704d2b3 e travou o push de novo (pre-receive hook declined).
+# Provado com `git check-ignore -v` antes e depois desta linha.
+#
+# CORRIGIDO 2026-09-01: o comentário aqui afirmava que o modelo EM USO era
+# `mao_pro`. Falso desde então — `conf.yaml:20` diz `live2d_model_name:
+# celia_vts`. O `mao_pro` (870 KB) é o modelo de demonstração do Cubism.
+#
+# A regra é CIRÚRGICA de propósito: fora do git vai só o `.moc3`, que é o
+# rig binário pesado. O `model3.json`, a física, as expressões e os 13
+# atlas de textura CONTINUAM versionados — são pequenos e a Célia precisa
+# deles rastreados.
+assets/
+web/live2d-models/celia_*_vts/
+web/live2d-models/celia_vts/*.moc3
+
+# ASR principal (TAGARELA): venv próprio e pesos do modelo (880 MB) ficam fora do git
+.venv-asr-tagarela/
+models/asr/
+
+# 2026-10-06 (Kurt): corpo 3D da Celia. O .vrm (33 MB, gerado do Blender) fica no disco e FORA do git;
+# fonte e reexportacao: e1_exportar.py, no acervo 3D do dono (fora do repositorio)
+frontend/modelos-3d/*.vrm
+# clipes 3D: clawatar = Mixamo non-commercial (so experimento); m2m = CC0. Ver frontend/modelos-3d/anim/PROCEDENCIA.txt
+frontend/modelos-3d/anim/
+
+# ambientes Python com nome proprio (ex.: .venv-dedup) nunca entram no Git
+**/.venv-*/
+
+.backup/
+*.env.before*
+bench/ensaio_gravacao/runs/2026-10-05_0630/monitor.jsonl
+
+# 2026-11-12: mídia grande demais para o GitHub (limite 100 MB); fica só local
+tools/mode-lab/ui/music/*.mp3
+
+# 2026-11-12 (open source): backups e quarentena ficam só no disco
+backups/
+_quarantine/
+**/_quarantine/
+.contract-backup/
+**/.contract-backup/
+cache/
+!config/caminhos.example.env
+
+# Gravações brutas de calls do Discord: privadas, nunca versionar.
+debug_audios/
+
+# Celia V02: runtime-only state and generated/private datasets.
+# Keep fixtures and templates trackable; do not ignore their directories broadly.
+/conf.yaml.bak*
+/conf.yaml.backup*
+/conf.yaml.before-*
+/conf.yaml.old*
+/conf.yml.bak*
+/conf.yml.backup*
+/conf.yml.before-*
+/conf.yml.old*
+**/conf*.yaml.bak*
+**/conf*.yml.bak*
+**/conf*.yaml.backup*
+**/conf*.yml.backup*
+**/conf*.yaml.before-*
+**/conf*.yml.before-*
+
+**/state/
+**/state/**
+**/datasets/raw/
+**/datasets/raw/**
+**/datasets/generated/
+**/datasets/generated/**
+**/datasets/private/
+**/datasets/private/**
+**/datasets/tmp/
+**/datasets/tmp/**
+**/logs/
+**/logs/**
+**/.venv/
+**/.venv-*/
+**/venv/
+
+# Existing global audio rules should not hide intentional test fixtures/templates.
+!**/tests/fixtures/**/*.wav
+!**/fixtures/**/*.wav
+!**/templates/**/*.wav
+
+# repositório público
+_descartado/
+tools/export/ultimo-relatorio.txt
+.claude/settings.local.json
+
+# configuração local (copie de conf.example.yaml)
+conf.yaml
+conf.yaml.bak*
+conf.yaml.before*
+singleton_state.json
+estado_enquete.json
+
+# instruções internas de trabalho e scripts de preparação (não publicar)
+AGENTS.md
+GEMINI.md
+tools/export/

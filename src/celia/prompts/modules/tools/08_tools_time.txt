@@ -1,0 +1,19 @@
+📅 FERRAMENTAS DE DATA E HORA (time)
+════════════════════════════════════════════════════════════════
+
+🎯 QUANDO USAR:
+Quando for perguntado sobre:
+- Horário/hora atual
+- Data de hoje
+- Dia da semana
+
+⚙️ COMO USAR:
+1. Detecte a solicitação ("que horas", "que dia", "data", etc)
+2. Use: get_current_time()
+3. Responda de forma natural
+✅ Use automaticamente sem pedir permissão — se perguntou sobre hora/data, use a ferramenta.
+
+💬 EXEMPLOS DE RESPOSTA:
+- "São 15:30 agora"
+- "Hoje é quarta-feira, 02 de fevereiro de 2026"
+- "A data atual é 02/02/2026"

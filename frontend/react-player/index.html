@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Célia React</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topo">
+  <a class="voltar" id="voltar" href="./" aria-label="Voltar para a lista de vídeos" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20z"/></svg>
+  </a>
+  <a class="marca" href="./" aria-label="Célia React, início">
+    <span class="marca-icone" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+    <span class="marca-nome">Célia <b>React</b></span>
+  </a>
+  <form class="busca" id="form-url" autocomplete="off">
+    <label class="sr" for="campo-url">Link do vídeo do YouTube</label>
+    <input id="campo-url" type="url" placeholder="Cole o link do vídeo do YouTube" required>
+    <button id="btn-carregar" type="submit" class="seta" aria-label="Carregar vídeo">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h12m-5-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </form>
+  <div class="modo" role="radiogroup" aria-label="Modo do React">
+    <button role="radio" aria-checked="true" data-modo="duo">Comigo</button>
+    <button role="radio" aria-checked="false" data-modo="solo">Solo</button>
+  </div>
+</header>
+
+<main class="inicio" id="inicio" hidden>
+  <h1 class="sr">Seus vídeos</h1>
+  <p class="aviso" id="aviso-inicio" role="alert" hidden></p>
+  <ul class="grade" id="grade" aria-label="Vídeos"></ul>
+  <div class="vazio-inicio" id="vazio-inicio" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+    <p>Nenhum vídeo ainda.</p>
+    <small>Cole um link do YouTube no campo lá em cima e toque na seta azul.</small>
+  </div>
+</main>
+
+<main class="pagina" id="tela-player" hidden>
+  <section class="coluna-principal">
+    <div class="player" id="player" tabindex="-1">
+      <video id="video" playsinline preload="metadata"></video>
+      <div class="vazio" id="vazio">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+        <p>Cole um link e toque na seta azul.</p>
+      </div>
+      <div class="espera" id="espera" hidden role="status" aria-live="polite">
+        <div class="girando" aria-hidden="true"></div>
+        <p id="espera-texto">Preparando este trecho…</p>
+        <small id="espera-sub"></small>
+      </div>
+      <button class="play-central" id="play-central" aria-label="Reproduzir" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+
+      <div class="controles" id="controles">
+        <div class="barra" id="barra" role="slider" tabindex="0" aria-label="Posição do vídeo"
+             aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-valuetext="0:00">
+          <div class="trilho" id="trilho"></div>
+          <div class="pegador" id="pegador"></div>
+          <div class="dica" id="dica" hidden><span id="dica-tempo">0:00</span><span id="dica-estado"></span></div>
+        </div>
+        <div class="linha-botoes">
+          <div class="grupo">
+            <button class="ctl" id="btn-play" aria-label="Reproduzir (k)">
+              <svg class="ic-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              <svg class="ic-pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+            </button>
+            <button class="ctl" id="btn-voltar" aria-label="Voltar 10 segundos (j)">
+              <svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/><text x="12" y="16.5" font-size="6.5" text-anchor="middle">10</text></svg>
+            </button>
+            <button class="ctl" id="btn-avancar" aria-label="Avançar 10 segundos (l)">
+              <svg viewBox="0 0 24 24"><path d="M12 5V2l5 4-5 4V7a6 6 0 1 0 6 6h2a8 8 0 1 1-8-8z"/><text x="12" y="16.5" font-size="6.5" text-anchor="middle">10</text></svg>
+            </button>
+            <div class="volume">
+              <button class="ctl" id="btn-mudo" aria-label="Silenciar (m)">
+                <svg class="ic-som" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>
+                <svg class="ic-mudo" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9zm13.6 3 2.7-2.7-1.4-1.4-2.7 2.7-2.7-2.7-1.4 1.4 2.7 2.7-2.7 2.7 1.4 1.4 2.7-2.7 2.7 2.7 1.4-1.4z"/></svg>
+              </button>
+              <input id="vol" type="range" min="0" max="1" step="0.05" value="1" aria-label="Volume">
+            </div>
+            <span class="tempo"><span id="t-atual">0:00</span> / <span id="t-total">0:00</span></span>
+          </div>
+          <div class="grupo">
+            <span class="analise" id="analise" title="Estado da pré-análise"></span>
+            <div class="vel-wrap">
+              <button class="ctl txt" id="btn-vel" aria-label="Velocidade" aria-haspopup="menu" aria-expanded="false">1×</button>
+              <div class="menu" id="menu-vel" role="menu" hidden></div>
+            </div>
+            <button class="ctl" id="btn-tela" aria-label="Tela cheia (f)">
+              <svg viewBox="0 0 24 24"><path d="M5 5h5v2H7v3H5zm9 0h5v5h-2V7h-3zM5 14h2v3h3v2H5zm12 3v-3h2v5h-5v-2z"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info">
+      <h1 id="titulo">Nenhum vídeo carregado</h1>
+      <div class="canal">
+        <img id="miniatura" alt="" hidden>
+        <div>
+          <div id="canal-nome" class="canal-nome"></div>
+          <div class="legenda-cores" aria-label="Legenda da barra">
+            <span><i class="c-red"></i>Assistido</span>
+            <span><i class="c-blue"></i>Analisado e liberado</span>
+            <span><i class="c-gray"></i>Ainda em análise</span>
+          </div>
+        </div>
+      </div>
+      <p class="aviso" id="aviso" role="alert" hidden></p>
+    </div>
+  </section>
+
+  <aside class="lateral">
+    <section class="painel">
+      <h2>Pré-análise</h2>
+      <ol class="segmentos" id="segmentos"></ol>
+    </section>
+    <section class="painel">
+      <h2>O que a Célia já viu <small id="ctx-contagem"></small></h2>
+      <ol class="contexto" id="contexto"><li class="vazio-lista">Nada liberado ainda.</li></ol>
+    </section>
+  </aside>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>

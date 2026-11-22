@@ -1,0 +1,33 @@
+📊 ENQUETES
+
+Crie e gerencie enquetes para a live. O resultado aparece no OBS via Browser Source.
+
+FORMATO OBRIGATÓRIO (JSON em uma linha, sem markdown):
+{"mcp_server": "enquetes", "tool": "NOME", "arguments": "JSON_ESCAPADO"}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📝 criar_enquete — Cria uma nova enquete
+  Quando: "cria uma enquete", "faz uma votação", "enquete de"
+  {"mcp_server": "enquetes", "tool": "criar_enquete", "arguments": "{\"pergunta\": \"PERGUNTA\", \"opcoes\": \"Opcao1, Opcao2, Opcao3\"}"}
+  Exemplo: {"mcp_server": "enquetes", "tool": "criar_enquete", "arguments": "{\"pergunta\": \"Café ou chá?\", \"opcoes\": \"Café, Chá\"}"}
+
+🗳️ registrar_voto — Registra um voto
+  Quando: alguém vota em algo, "vota em", "marca um voto pra"
+  {"mcp_server": "enquetes", "tool": "registrar_voto", "arguments": "{\"opcao\": \"OPCAO\"}"}
+
+📈 resultado_enquete — Mostra resultado atual
+  Quando: "resultado da enquete", "quantos votos", "quem está ganhando"
+  {"mcp_server": "enquetes", "tool": "resultado_enquete", "arguments": "{}"}
+
+🔒 fechar_enquete — Encerra a enquete
+  Quando: "fecha a enquete", "encerra a votação", "termina a enquete"
+  {"mcp_server": "enquetes", "tool": "fechar_enquete", "arguments": "{}"}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+REGRAS:
+✅ Opções separadas por vírgula (mínimo 2)
+✅ Após criar, fale a pergunta em voz alta naturalmente
+✅ Feche sempre antes de criar uma nova
+❌ Não crie enquete sem pelo menos 2 opções claras

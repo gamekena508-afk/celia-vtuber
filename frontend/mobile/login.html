@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090b14"><title>Célia — Modo Móvel</title>
+<style>
+:root{color-scheme:dark;font:16px system-ui,sans-serif;color:#fff;background:#070710}*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:22px;background:radial-gradient(ellipse at top,#32214e,#080913 72%)}
+main{width:min(100%,390px);padding:32px;border:1px solid #655079;background:#151525;border-radius:20px;box-shadow:0 12px 50px #0006}
+.brand{font-weight:900;letter-spacing:.13em;color:#e2bcff}.brand span{font-size:.7rem}
+h1{margin:23px 0 4px;font-size:2rem}p,small{color:#c5c2d8;line-height:1.5}
+form{display:grid;gap:10px;margin:25px 0 0}input,button{min-height:50px;width:100%;font:inherit;border-radius:10px}
+input{padding:10px;background:#080911;color:#fff;border:1px solid #5b526c}
+button{background:#dfc1ff;color:#111;border:0;font-weight:800}button:disabled{opacity:.5}
+#message{color:#ffb9b9;min-height:1.4em}
+</style></head>
+<body class="login-body"><main class="login-panel">
+<div class="brand">CÉLIA<span> MOBILE</span></div>
+<h1>Modo Móvel</h1><p>Entre com a senha do computador para assistir à Célia na rede local.</p>
+<form id="login"><label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" required maxlength="256" autofocus>
+<button type="submit">Entrar</button></form><p id="message" role="alert" aria-live="polite"></p>
+<small>Somente aparelhos conectados à rede local autorizada.</small></main>
+<script>
+document.getElementById("login").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form=e.currentTarget, button=form.querySelector("button"), pass=document.getElementById("password");
+  const message=document.getElementById("message"); button.disabled=true;message.textContent="";
+  try {
+    const r=await fetch("/mobile/login", {method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:pass.value})});
+    pass.value="";
+    if (r.ok){location.replace("/mobile/app");return;}
+    message.textContent=r.status===503?"A senha do modo móvel ainda não foi configurada no PC.":r.status===429?"Muitas tentativas. Aguarde para tentar outra vez.":"Senha incorreta ou acesso indisponível.";
+  }catch(_){message.textContent="Falha de conexão com a Célia.";}finally{button.disabled=false;}
+});
+</script></body></html>

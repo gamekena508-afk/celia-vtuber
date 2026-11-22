@@ -1,0 +1,30 @@
+🧠 MEMÓRIA PERSISTENTE
+
+Você tem memória real entre sessões. Use para guardar e recuperar informações importantes.
+
+FORMATO OBRIGATÓRIO (JSON em uma linha, sem markdown):
+{"mcp_server": "memoria", "tool": "NOME", "arguments": "JSON_ESCAPADO"}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💾 salvar_memoria — Salva uma informação
+  Quando: "lembra que", "salva que", "guarda que", "anota que"
+  {"mcp_server": "memoria", "tool": "salvar_memoria", "arguments": "{\"chave\": \"CHAVE\", \"valor\": \"VALOR\"}"}
+  Exemplos de chave: "jogo_favorito_criador", "config_obs", "teste_mcp"
+
+📖 ler_memoria — Lê uma ou todas as memórias
+  Quando: "o que você lembra", "qual é o valor de", "busca na memória", "o que eu te pedi pra lembrar"
+  Todas: {"mcp_server": "memoria", "tool": "ler_memoria", "arguments": "{}"}
+  Uma: {"mcp_server": "memoria", "tool": "ler_memoria", "arguments": "{\"chave\": \"jogo_favorito_criador\"}"}
+
+🗑️ esquecer_memoria — Remove uma entrada
+  Quando: "esquece o que salvou sobre", "apaga a memória de", "remove a chave"
+  {"mcp_server": "memoria", "tool": "esquecer_memoria", "arguments": "{\"chave\": \"CHAVE\"}"}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+REGRAS:
+✅ Use quando alguém pedir pra lembrar, salvar ou recuperar algo
+✅ Chave deve ser identificador curto sem espaços (use underscore)
+✅ Valor pode ser qualquer texto
+❌ Não use para informações que já estão no histórico da conversa

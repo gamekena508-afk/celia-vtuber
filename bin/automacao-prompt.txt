@@ -1,0 +1,5 @@
+Teste de automacao. Faca APENAS isto e nada mais:
+1. rode: curl -s -o /dev/null -w '%{http_code}' -m 5 http://127.0.0.1:12393/
+2. responda UMA linha em portugues, exatamente neste formato:
+   automacao viva HH:MM — Celia 12393 -> <codigo>
+Nao edite arquivo nenhum. Nao rode teste. Nao siga o plano.

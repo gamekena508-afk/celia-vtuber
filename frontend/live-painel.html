@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel do Modo Live</title>
+<style>
+  :root { --bg:#14151a; --card:#1e2028; --line:#2e313c; --txt:#e8e9ee; --mut:#9a9eb0; --ok:#4cc38a; --warn:#f0b429; --bad:#ef5b5b; --acc:#7c8cff; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt); font:14px/1.45 system-ui, "Segoe UI", sans-serif; padding:16px; max-width:1100px; margin-inline:auto; }
+  h1 { font-size:20px; margin:0 0 4px; } h2 { font-size:14px; margin:0 0 10px; color:var(--mut); text-transform:uppercase; letter-spacing:.05em; }
+  .sub { color:var(--mut); margin-bottom:14px; }
+  .grid { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:6px 0; }
+  .row label { min-width:150px; color:var(--mut); }
+  button { background:#2a2d3a; color:var(--txt); border:1px solid var(--line); border-radius:7px; padding:7px 12px; cursor:pointer; font:inherit; }
+  button:hover { border-color:var(--acc); } button.primary { background:var(--acc); color:#0c0d12; border-color:var(--acc); font-weight:600; } button.danger { border-color:var(--bad); color:var(--bad); }
+  input[type=text], input[type=number], select, textarea { background:#12131a; color:var(--txt); border:1px solid var(--line); border-radius:7px; padding:6px 8px; font:inherit; min-width:0; }
+  input[type=range] { flex:1; min-width:120px; accent-color:var(--acc); }
+  .pill { display:inline-block; padding:2px 9px; border-radius:99px; font-size:12px; font-weight:600; border:1px solid var(--line); }
+  .on { color:var(--ok); border-color:var(--ok); } .off { color:var(--mut); } .warn { color:var(--warn); border-color:var(--warn); } .bad { color:var(--bad); border-color:var(--bad); }
+  table { width:100%; border-collapse:collapse; font-size:13px; } td, th { padding:4px 6px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+  .mut { color:var(--mut); } .seat { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--line); }
+  .banner { padding:8px 12px; border-radius:8px; margin-bottom:12px; background:#2a2310; border:1px solid var(--warn); color:var(--warn); }
+  .val { min-width:44px; text-align:right; font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<h1>Modo Live — Célia, Slime e Ursinho</h1>
+<div class="sub">Nada aqui conecta ao TikTok sozinho. O leitor só sobe depois de você autorizar a sessão e informar a sala.</div>
+<div id="aviso" class="banner" hidden></div>
+
+<div class="grid">
+  <section class="card">
+    <h2>Modo</h2>
+    <div class="row"><span id="pillModo" class="pill off">DESLIGADO</span>
+      <span class="mut" id="isolamento"></span></div>
+    <div class="row">
+      <button class="primary" data-modo="test">Ativar TESTE (simulado, sem rede)</button>
+      <button data-modo="live">Ativar LIVE (isola microfone)</button>
+      <button class="danger" id="btnDesligar">Desligar módulo Live</button>
+    </div>
+    <div class="mut">Ativar isola o microfone e o texto digitado; o ASR continua ligado. Desligar devolve tudo ao normal.</div>
+  </section>
+
+  <section class="card">
+    <h2>Chat do TikTok (leitor)</h2>
+    <div class="row"><span id="pillLeitor" class="pill off">PARADO</span><span class="mut" id="leitorMsg"></span></div>
+    <div class="row"><label for="sala">Número da sala atual</label><input type="text" id="sala" placeholder="do link da live de HOJE" inputmode="numeric"></div>
+    <div class="row"><label><input type="checkbox" id="autorizo"> Estou ao vivo e autorizo conectar</label></div>
+    <div class="row"><button class="primary" id="btnLeitor">Conectar chat</button><button class="danger" id="btnLeitorStop">Parar leitor</button></div>
+    <div class="mut" id="leitorAmbiente"></div>
+  </section>
+
+  <section class="card">
+    <h2>Posições do ranking → personagem</h2>
+    <div id="seats"></div>
+    <div class="row"><button id="btnResetRank">Reiniciar ranking da sessão</button></div>
+    <div class="mut">Top 1 → Slime · Top 2 → Ursinho · demais → Célia. Chamar o personagem pelo nome vence a posição.</div>
+  </section>
+
+  <section class="card">
+    <h2>Falando agora / fila</h2>
+    <div id="falando" class="row"></div>
+    <table id="fila"><thead><tr><th>Quem</th><th>Personagem</th><th>Estado</th><th>Mensagem</th></tr></thead><tbody></tbody></table>
+    <div class="row mut" id="contadores"></div>
+  </section>
+
+  <section class="card">
+    <h2>Testar personagens (sem TikTok)</h2>
+    <div class="row"><input type="text" id="textoTeste" style="flex:1" value="Oi! Estou testando minha voz e minha boca."></div>
+    <div class="row">
+      <button data-teste="celia">Testar Célia</button><button data-teste="slime">Testar Slime</button><button data-teste="ursinho">Testar Ursinho</button>
+    </div>
+    <h2 style="margin-top:14px">Simular (só no modo TESTE)</h2>
+    <div class="row"><input type="text" id="simUser" value="ana" style="width:90px"><input type="text" id="simNick" value="Ana" style="width:110px">
+      <input type="text" id="simTexto" style="flex:1" value="oi, tudo bem por aí?"><button id="btnSimChat">Mensagem</button></div>
+    <div class="row"><input type="number" id="simValor" value="100" style="width:90px"><button id="btnSimGift">Presente (valor) do usuário acima</button></div>
+  </section>
+
+  <section class="card">
+    <h2>Volumes e tempos</h2>
+    <div id="ajustes"></div>
+    <div class="mut">Salvo em <code>var/live_mode/settings.json</code> (fora do git).</div>
+  </section>
+
+  <section class="card">
+    <h2>Slime e Ursinho: escala e posição</h2>
+    <div id="posicoes"></div>
+  </section>
+</div>
+
+<script>
+const API = "/bridge/live";
+const $ = (id) => document.getElementById(id);
+let ultimo = null;
+
+async function chamar(rota, corpo, metodo) {
+  const r = await fetch(API + rota, { method: metodo || (corpo === undefined ? "GET" : "POST"), headers: { "Content-Type": "application/json" }, body: corpo === undefined ? undefined : JSON.stringify(corpo) });
+  let d = null; try { d = await r.json(); } catch (_) { d = null; }
+  if (!r.ok) { aviso((d && d.detail) || ("erro " + r.status)); throw new Error("http " + r.status); }
+  aviso(""); return d;
+}
+function aviso(t) { const e = $("aviso"); e.hidden = !t; e.textContent = t || ""; }
+function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+const AJUSTES = [
+  ["volumes.celia", "Volume da Célia (visual)", 0, 1, 0.05], ["volumes.slime", "Volume do Slime", 0, 1, 0.05], ["volumes.ursinho", "Volume do Ursinho", 0, 1, 0.05],
+  ["gap_between_speeches_s", "Intervalo entre falas (s)", 0, 10, 0.1], ["max_chars_read", "Máx. caracteres lidos", 20, 1000, 10],
+  ["per_user_interval_s", "Intervalo por usuário (s)", 0, 600, 1], ["per_user_max_per_minute", "Máx. por usuário/min", 1, 60, 1],
+  ["queue_max", "Tamanho máximo da fila", 1, 100, 1], ["reply_max_chars", "Máx. caracteres da resposta", 40, 600, 10],
+  ["ranking_window_minutes", "Janela do ranking (min; 0 = sessão)", 0, 1440, 5],
+];
+const POSICOES = [["scale", "Escala", 0.2, 3, 0.05], ["offset_x", "Posição horizontal", -2, 2, 0.05], ["offset_y", "Posição vertical", -2, 2, 0.05]];
+function pegar(obj, caminho) { return caminho.split(".").reduce((o, k) => (o == null ? o : o[k]), obj); }
+function montar(el, itens, cfg, prefixo) {
+  el.innerHTML = itens.map(([k, rot, mn, mx, st]) => { const v = pegar(cfg, k);
+    return `<div class="row"><label>${rot}</label><input type="range" data-k="${prefixo}${k}" min="${mn}" max="${mx}" step="${st}" value="${v}"><span class="val">${Number(v).toFixed(st < 1 ? 2 : 0)}</span></div>`; }).join("");
+}
+let adiar = null;
+function ligarSliders(raiz) {
+  raiz.querySelectorAll("input[type=range]").forEach((s) => s.addEventListener("input", () => {
+    s.nextElementSibling.textContent = Number(s.value).toFixed(Number(s.step) < 1 ? 2 : 0);
+    clearTimeout(adiar); adiar = setTimeout(() => {
+      const patch = {}; const partes = s.dataset.k.split("."); let o = patch;
+      partes.forEach((p, i) => { if (i === partes.length - 1) o[p] = Number(s.value); else { o[p] = {}; o = o[p]; } });
+      chamar("/settings", patch);
+    }, 250);
+  }));
+}
+function desenhar(s) {
+  ultimo = s;
+  const m = $("pillModo"); m.textContent = s.mode === "off" ? "DESLIGADO" : s.mode === "test" ? "TESTE (simulado)" : "LIVE"; m.className = "pill " + (s.mode === "off" ? "off" : s.mode === "test" ? "warn" : "on");
+  $("isolamento").textContent = s.active ? "microfone e texto do dono ISOLADOS · bloqueados: " + s.counters.mic_blocked + " · fontes externas barradas: " + s.counters.foreign_blocked : "modos normais ativos";
+  const r = s.reader || {}; const pl = $("pillLeitor");
+  pl.textContent = ({ stopped: "PARADO", starting: "CONECTANDO", connected: "CONECTADO", error: "ERRO", exited: "ENCERRADO" })[r.state] || r.state;
+  pl.className = "pill " + ({ connected: "on", starting: "warn", error: "bad", exited: "warn" })[r.state];
+  $("leitorMsg").textContent = (r.message || "") + (r.room_id ? " · sala " + r.room_id : "");
+  $("leitorAmbiente").textContent = r.env_ready ? "Ambiente do leitor instalado." : "Ambiente do leitor ausente (integrations/tiktok_live_reader/.venv).";
+  $("seats").innerHTML = (s.seats.length ? s.seats : [{ seat: 1, character: "slime" }, { seat: 2, character: "ursinho" }]).map((x) =>
+    `<div class="seat"><span>Top ${x.seat} → <b>${esc(x.character === "slime" ? "Slime" : "Ursinho")}</b></span><span>${x.name ? esc(x.name) + " (" + esc(x.display_id || x.user_id) + ") · " + x.total : '<span class="mut">vago — a Célia responde</span>'}</span></div>`).join("");
+  const f = s.speaking; $("falando").innerHTML = f ? `<span class="pill on">falando</span> <b>${esc(f.character)}</b> <span class="mut">para ${esc(f.author)}</span>` : '<span class="mut">ninguém falando</span>';
+  $("fila").querySelector("tbody").innerHTML = s.queue.concat(s.recent.slice().reverse().slice(0, 8)).map((j) =>
+    `<tr><td>${esc(j.author)}<div class="mut">${esc(j.display_id || j.user_id)} · ${j.origin === "simulated" ? "SIMULADO" : "real"}</div></td><td>${esc(j.character)}<div class="mut">${esc(j.route)}${j.rank ? " #" + j.rank : ""}</div></td><td>${esc(j.state)}<div class="mut">${esc(j.detail)}</div></td><td>${esc(j.text)}${j.reply ? '<div class="mut">→ ' + esc(j.reply) + "</div>" : ""}</td></tr>`).join("");
+  const c = s.counters; $("contadores").textContent = `aceitas ${c.chat_accepted} · recusadas ${c.chat_rejected} · feitas ${c.jobs_done} · falhas ${c.jobs_failed} · clientes de áudio ${s.audio_clients}` + (s.last_error ? " · último erro: " + s.last_error : "");
+  if (!$("ajustes").dataset.pronto) { montar($("ajustes"), AJUSTES, s.settings, ""); ligarSliders($("ajustes")); $("ajustes").dataset.pronto = 1;
+    $("posicoes").innerHTML = ["slime", "ursinho"].map((n) => `<h2 style="margin-top:8px">${n === "slime" ? "Slime" : "Ursinho"} <label style="text-transform:none"><input type="checkbox" data-hab="${n}" ${s.settings.characters[n].enabled ? "checked" : ""}> visível</label></h2><div id="pos-${n}"></div>`).join("");
+    for (const n of ["slime", "ursinho"]) { montar($("pos-" + n), POSICOES, s.settings.characters[n], "characters." + n + "."); ligarSliders($("pos-" + n)); }
+    document.querySelectorAll("[data-hab]").forEach((cb) => cb.addEventListener("change", () => chamar("/settings", { characters: { [cb.dataset.hab]: { enabled: cb.checked } } })));
+  }
+}
+async function atualizar() { try { desenhar(await chamar("/status")); } catch (_) { /* aviso ja mostrado */ } }
+
+document.querySelectorAll("[data-modo]").forEach((b) => b.addEventListener("click", async () => { await chamar("/enable", { mode: b.dataset.modo, room_id: b.dataset.modo === "live" ? ($("sala").value.trim() || null) : null }); atualizar(); }));
+$("btnDesligar").addEventListener("click", async () => { await chamar("/disable", {}); atualizar(); });
+$("btnLeitor").addEventListener("click", async () => { await chamar("/reader/start", { authorized: $("autorizo").checked, room_id: $("sala").value.trim() }); atualizar(); });
+$("btnLeitorStop").addEventListener("click", async () => { await chamar("/reader/stop", {}); atualizar(); });
+$("btnResetRank").addEventListener("click", async () => { await chamar("/ranking/reset", {}); atualizar(); });
+document.querySelectorAll("[data-teste]").forEach((b) => b.addEventListener("click", async () => { await chamar("/test-character", { character: b.dataset.teste, text: $("textoTeste").value }); atualizar(); }));
+$("btnSimChat").addEventListener("click", async () => { await chamar("/simulate/chat", { user_id: $("simUser").value, nickname: $("simNick").value, text: $("simTexto").value }); atualizar(); });
+$("btnSimGift").addEventListener("click", async () => { await chamar("/simulate/gift", { user_id: $("simUser").value, nickname: $("simNick").value, diamond_count: Number($("simValor").value) || 1 }); atualizar(); });
+atualizar(); setInterval(atualizar, 1000);
+</script>
+</body>
+</html>

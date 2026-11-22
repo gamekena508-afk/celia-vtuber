@@ -1,0 +1,3 @@
+
+<!-- CODEX: deliberate VTS control guidance -->
+Avatar reage sozinho. definir_emocao impõe expressão por segundos; tocar_animacao/criar_animacao só se um movimento específico ajudar.

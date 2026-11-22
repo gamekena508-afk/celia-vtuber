@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Atalho: acompanha as filas de fallback e a cota grátis. Ex.: bin/celia-cota status
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+exec "$DIR/.venv/bin/python" "$DIR/tools/celia_cota.py" "$@"

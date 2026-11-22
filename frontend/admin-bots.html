@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Bots locais · Célia</title>
+  <link rel="stylesheet" href="./admin-bots.css">
+  <script src="./admin-bots.js" defer></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div><p class="eyebrow">CÉLIA · ADMIN LOCAL</p><h1>Bots</h1><p class="intro">Estado de execução e conexão dos processos controlados por esta instância.</p></div>
+      <a class="back" href="/">Voltar à Célia</a>
+    </header>
+    <section class="auth panel" aria-labelledby="auth-title">
+      <div class="auth-copy"><h2 id="auth-title">Acesso local</h2><p>O token fica somente nesta página enquanto ela estiver aberta. Não é salvo no navegador.</p></div>
+      <form id="auth-form"><label for="admin-token">Token administrativo</label><div class="auth-controls"><input id="admin-token" name="token" type="password" autocomplete="off" spellcheck="false" required><button type="submit">Conectar</button><button id="clear-token" class="quiet" type="button" hidden>Desconectar</button></div></form>
+    </section>
+    <section class="statusbar" aria-live="polite"><span id="connection-dot" class="dot" aria-hidden="true"></span><span id="connection-status">Informe o token para consultar o estado.</span><button id="refresh" class="quiet" type="button" disabled>Atualizar</button></section>
+    <section id="bots" class="bot-list" aria-label="Estado dos bots"></section>
+    <p class="footnote">Iniciar e parar bots exige autenticação local. Bots sem launcher aprovado permanecem indisponíveis.</p>
+  </main>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# React keeps state under the account's V02 LocalAppData root unless an explicit
+# storage_root override is introduced for an isolated test environment.
+analyzer: real
+tagarela_url: http://127.0.0.1:8011/v1
+celia_adapter: false
+celia_adapter_voice: false
+max_media_bytes: 4294967296
+download_timeout_seconds: 1800
+segment_target_ms: 150000
+max_segments: 40

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bancada 3D</title>
+<!-- Plano Celia 3D: bancada ISOLADA (fora da interface). three + three-vrm locais, sem CDN. -->
+<script type="importmap">
+{ "imports": {
+  "three": "./libs/three/build/three.module.js",
+  "three/addons/": "./libs/three/addons/",
+  "@pixiv/three-vrm": "./libs/three-vrm/three-vrm.module.min.js"
+} }
+</script>
+<style>
+  :root { --fundo:#161616; --painel:rgba(24,24,24,.86); --texto:#ececec; --fraco:#a0a0a0; --ok:#7bd88f; --erro:#ff6b6b;
+          --borda:#3a3a3a; --botao:#262626; --ativo:#e8c34a; }
+  :root[data-theme="light"] { --painel:rgba(250,250,250,.9); --texto:#1a1a1a; --fraco:#555; --borda:#c8c8c8; --botao:#f0f0f0; --ativo:#b8860b; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --painel:rgba(24,24,24,.86); --texto:#ececec; } }
+  :root[data-theme="dark"] { --painel:rgba(24,24,24,.86); --texto:#ececec; }
+  html, body { margin:0; height:100%; background:var(--fundo); color:var(--texto); font:13px/1.4 system-ui, sans-serif; overflow:hidden; }
+  #palco { position:fixed; inset:0; }
+  #palco canvas { display:block; width:100%; height:100%; }
+  #painel { position:fixed; top:12px; left:16px; width:min(340px, calc(100vw - 32px)); max-height:calc(100vh - 24px); overflow:auto;
+            background:var(--painel); border:1px solid var(--borda); border-radius:10px; padding:10px 12px; backdrop-filter:blur(6px); }
+  #painel.recolhido .corpo { display:none; }
+  #estado[data-s="ok"] { color:var(--ok); } #estado[data-s="erro"] { color:var(--erro); }
+  #painel small { color:var(--fraco); display:block; }
+  .grupo { margin-top:8px; } .grupo b { display:block; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--fraco); margin-bottom:3px; }
+  #painel button { margin:3px 4px 0 0; background:var(--botao); color:var(--texto); border:1px solid var(--borda); border-radius:6px;
+                   padding:4px 9px; cursor:pointer; font:inherit; }
+  #painel button[aria-pressed="true"] { border-color:var(--ativo); color:var(--ativo); }
+  #painel button:focus-visible { outline:2px solid var(--ativo); outline-offset:1px; }
+  .chip { display:inline-flex; align-items:stretch; margin:3px 4px 0 0; } .chip[hidden] { display:none; }
+  #painel .chip button { margin:0; } #painel .chip .principal { border-radius:6px 0 0 6px; } .chip .marcas { display:inline-flex; }
+  #painel .chip .m { border-left:0; padding:4px 6px; min-width:24px; color:var(--fraco); border-radius:0; } #painel .chip .m:last-child { border-radius:0 6px 6px 0; }
+  #painel .chip .m.ok:hover, #painel .chip .m.ok:focus-visible { color:var(--ok); } #painel .chip .m.melhorar:hover, #painel .chip .m.melhorar:focus-visible { color:var(--ativo); } #painel .chip .m.descartada:hover, #painel .chip .m.descartada:focus-visible { color:var(--erro); }
+  .chip[data-estado="ok"] .principal { border-color:var(--ok); } .chip[data-estado="ok"] .m { color:var(--ok); border-color:var(--ok); }
+  .chip[data-estado="melhorar"] .principal { border-color:var(--ativo); } .chip[data-estado="melhorar"] .m { color:var(--ativo); border-color:var(--ativo); }
+  .chip[data-estado="descartada"] .principal { text-decoration:line-through; opacity:.55; } .chip[data-estado="descartada"] .m { color:var(--erro); }
+  #g-descartadas[data-vazia="true"] { opacity:.6; } #curadoria-status[data-s="erro"] { color:var(--erro); }
+  #curadoria-lista { width:100%; box-sizing:border-box; background:var(--botao); color:var(--texto); border:1px solid var(--borda); border-radius:6px; font:11px/1.35 ui-monospace,monospace; }
+  body.app #painel { display:none; } body.app, body.app html { background:transparent; } body.app #palco { background:transparent; }
+  .topo { display:flex; align-items:center; gap:8px; } .topo button { margin-left:auto !important; }
+</style>
+</head>
+<body>
+<div id="palco"></div>
+<div id="painel">
+  <div class="topo"><strong>Bancada 3D</strong> <span id="estado" data-s="carregando">carregando…</span>
+    <button type="button" id="recolher" aria-expanded="true">recolher</button></div>
+  <div class="corpo">
+    <small id="info">—</small>
+    <small id="fps">FPS —</small>
+    <small id="agora">—</small>
+    <div class="grupo"><b>Demonstração</b><button type="button" id="demo" aria-pressed="true">automática: ligada</button>
+      <button type="button" id="camera">câmera: corpo inteiro</button></div>
+    <div class="grupo" id="g-emocao"><b>Emoção</b></div>
+    <div class="grupo" id="g-gesto"><b>Gestos</b></div>
+    <div class="grupo" id="g-acao"><b>Ações</b></div>
+    <div class="grupo" id="g-curadoria"><b>Curadoria</b></div>
+    <div class="grupo"><b>Fala</b><button type="button" id="falar">falar (demo)</button></div>
+  </div>
+</div>
+<script type="module" src="./celia-3d-bancada.js?v=bancada20261029r15u"></script>
+</body>
+</html>

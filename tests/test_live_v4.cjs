@@ -1,0 +1,13 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const root = require('node:path').join(__dirname, '..') + '/';
+const vad = fs.readFileSync(root+'frontend/rms_vad.js','utf8');
+assert(!vad.includes('vozPublico.connect(ctx.destination)'), 'physical mic must not be monitored');
+assert(vad.includes('proc.connect(muteGain)'), 'ASR worklet must remain connected');
+const studio = fs.readFileSync(root+'frontend/mobile/studio.js','utf8');
+assert(studio.includes('micGain.connect(audioDest)'), 'owner mic must remain in stream');
+assert(studio.includes('maxBitrate = 4500000'));
+assert(studio.includes('Math.sin(t * 1.7) * 2 * S'));
+assert(studio.includes('paintAiLabel(capCtx)') && studio.includes('paintAiLabel(ctx)'));
+assert(studio.includes('hasCaption: true'), 'AI disclosure must survive WebGL without captions');
+console.log('live-v4: monitoring separation, ASR continuity, stream mic, bitrate, motion and disclosure pass');

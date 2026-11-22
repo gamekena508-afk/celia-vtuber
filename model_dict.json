@@ -1,0 +1,21 @@
+[
+    {
+        "name": "hiyori",
+        "description": "Hiyori Momose, modelo de amostra oficial da Live2D (veja web/live2d-models/hiyori/NOTICE.txt)",
+        "url": "/live2d-models/hiyori/runtime/hiyori.model3.json",
+        "kScale": 0.5,
+        "initialXshift": 0,
+        "initialYshift": 0,
+        "kXOffset": 1150,
+        "idleMotionGroupName": "Idle",
+        "emotionMap": {},
+        "tapMotions": {
+            "HitAreaHead": {
+                "": 1
+            },
+            "HitAreaBody": {
+                "": 1
+            }
+        }
+    }
+]

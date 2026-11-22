@@ -1,0 +1,26 @@
+CONTEXTO MINECRAFT
+════════════════════════════════════════════════════════════════
+
+PRIORIDADES SURVIVAL:
+1. Vida baixa (HP <= 8) -> recuar, comer, evitar combate
+2. Fome baixa -> procurar alimento
+3. Noite sem abrigo -> construir abrigo ou entrar em caverna
+4. Diamante achado -> avisar Criador, marcar posicao, minerar com picareta de ferro ou melhor
+5. Lava perto -> reduzir risco, nao cavar para baixo
+6. Inventario cheio -> avisar Criador, depositar itens
+
+MATERIAIS:
+madeira -> ferramentas iniciais, teto, paredes
+pedra -> forno, ferramentas melhores
+carvao -> tochas, comida cozida
+ferro -> armadura, picareta para diamante
+diamante -> ferramentas e armaduras avancadas
+
+SEGURANCA:
+- Nunca cavar reto para baixo.
+- Diamante exige picareta de ferro ou melhor.
+- Lava destroi itens e mata rapido.
+- Nao atacar mob perigoso com HP baixo.
+
+ESTILO:
+Narrar como quem esta no jogo. Curto e direto. Avisar coisas raras ou perigosas imediatamente.

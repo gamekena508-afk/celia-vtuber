@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Célia — Estúdio Móvel (PC)</title><link rel="stylesheet" href="/mobile/static/mobile.css"></head>
+<body class="studio-body">
+<header><h1>Célia · Estúdio Móvel</h1><p>O PC renderiza a Célia; o celular recebe vídeo. Abra esta página apenas no PC. <a href="/" style="color:#d5beff">Voltar para a interface principal</a></p></header>
+<main class="studio-layout"><section class="studio-portrait">
+  <canvas id="composite" width="1080" height="1350" aria-label="Prévia da transmissão vertical"></canvas>
+  <iframe id="source-stage" src="/?pet=1&liveOutput=1&palco=1&corpo=2d&fundo=cena&mobileStudio=1" title="Célia renderizada no PC" tabindex="-1"></iframe>
+</section>
+<section class="studio-panel"><h2>Transmissão para celular</h2>
+<p id="studio-status" role="status">Preparando o palco…</p>
+<p id="transport-stats" class="hint" aria-live="polite" style="white-space:pre-line">Telemetria: aguardando primeira amostra.</p>
+<div class="two-buttons"><button id="start" type="button">Iniciar transmissão</button><button id="stop" type="button" disabled>Parar</button></div>
+<button id="share-window" type="button">Usar captura de janela (alternativa)</button>
+<p class="hint">Iniciar exige um clique por causa das regras do navegador. Mantenha este estúdio aberto e visível no PC para o vídeo continuar.</p>
+<label>Cenário <select id="scene"><option value="black">Preto</option><option value="violet">Roxo</option><option value="blue">Azul</option><option value="green">Verde</option><option value="studio">Estúdio</option></select></label>
+<label>Cenário próprio <input id="background-image" type="file" accept="image/png,image/jpeg,image/webp"></label>
+<p id="background-state" role="status" class="hint">Nenhum cenário próprio guardado.</p>
+<label>Corpo <select id="body"><option value="2d">2D Live2D</option><option value="3d">3D VRM</option></select></label>
+<label>Modelo 3D <select id="model"><option value="celia_v3_web.vrm">Célia V3</option><option value="celia_v4_web.vrm">Célia V4</option></select></label>
+<fieldset id="framing" class="framing" style="border:1px solid #40445a;border-radius:12px;padding:12px;display:grid;gap:10px">
+  <legend>Enquadramento da Célia (PC)</legend>
+  <button id="waist-up" type="button">Cintura para cima</button>
+  <label>Zoom <input id="zoom" type="range" min="0.4" max="2.8" step="0.01" value="1"></label>
+  <label>Horizontal <input id="pan-x" type="range" min="-0.85" max="0.85" step="0.01" value="0"></label>
+  <label>Vertical <input id="pan-y" type="range" min="-0.85" max="0.85" step="0.01" value="0"></label>
+  <label>Legenda: altura <input id="caption-y" type="range" min="0.1" max="0.92" step="0.005" value="0.833"></label>
+  <label>Enquete: tamanho <input id="enquete-size" type="range" min="0.5" max="1" step="0.01" value="0.8"></label>
+  <button id="enquete-zerar" type="button">Zerar enquete</button>
+  <output id="framing-readout" class="hint">Zoom 1.00 · horizontal 0.00 · vertical 0.00</output>
+</fieldset>
+<div class="two-buttons"><button id="recenter" type="button">Centralizar corpo</button><button id="stop-background" type="button">Remover cenário próprio</button></div>
+<p class="hint">Legenda: caixinha preta; a altura dela se ajusta no controle "Legenda: altura". Ajuste olhando a imagem. A barra − ✥ + do celular altera apenas a posição/escala da personagem, nunca a legenda.</p>
+<p class="hint">O áudio depende da reprodução no navegador do PC. Verifique a voz no telefone antes de iniciar a live.</p>
+<p class="hint">Acesso pelo celular: <code id="mobile-url">http://IP-DO-PC:12393/mobile</code>. Sem senha configurada, o celular continuará bloqueado.</p>
+</section></main><script src="/mobile/static/studio.js?v=4x5-20261025inv4" defer></script></body></html>

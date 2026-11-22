@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Atalho: mapa do prompt final que chega ao 70B (blocos, camadas, origem, exemplos). Não chama modelo. Ex.: bin/celia-prompt --texto "Bora, Célia."
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+exec "$DIR/.venv/bin/python" "$DIR/tools/celia_prompt_mapa.py" "$@"

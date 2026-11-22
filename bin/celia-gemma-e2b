@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Um unico llama-server local para visao e persona fallback. Nunca para a Celia.
+set -euo pipefail
+ROOT="$HOME/Documentos/llm-models/vision-q2-retidos/gemma4-e2b"
+MODEL="$ROOT/gemma-4-E2B-it-Q4_0.gguf"
+MMPROJ="$ROOT/mmproj-gemma-4-E2B-it-Q8_0.gguf"
+PORT="$(printenv CELIA_GEMMA_E2B_PORT || printf '8031')"
+MODE="$(printf '%s' "$*" | awk '{print $1}')"
+MODE="$(printf '%s' "$MODE" | sed 's/^$/check/')"
+if [[ "$MODE" != "check" && "$MODE" != "serve" ]]; then
+  echo "Uso: $0 check|serve" >&2
+  exit 2
+fi
+if [[ ! -s "$MODEL" || ! -s "$MMPROJ" ]]; then
+  echo "BLOQUEADO: modelo e/ou projetor Gemma E2B ausentes" >&2
+  exit 1
+fi
+if ! command -v llama-server >/dev/null 2>&1; then
+  echo "BLOQUEADO: llama-server nao encontrado" >&2
+  exit 1
+fi
+if ! command -v nvidia-smi >/dev/null 2>&1 || ! nvidia-smi -L >/dev/null 2>&1; then
+  echo "BLOQUEADO: driver NVIDIA inacessivel; nao iniciar modelo ou reiniciar Celia" >&2
+  exit 1
+fi
+if ! python3 - "$PORT" <<'PY'
+import socket, sys
+s = socket.socket()
+try:
+    s.bind(("127.0.0.1", int(sys.argv[1])))
+except OSError:
+    print("BLOQUEADO: porta ocupada, nao sobrescrever processo")
+    sys.exit(1)
+finally:
+    s.close()
+PY
+then
+  exit 1
+fi
+if [[ "$MODE" == "check" ]]; then
+  echo "OK: NVIDIA, modelos e porta $PORT prontos"
+  exit 0
+fi
+echo "Iniciando Gemma E2B na porta $PORT, sem interferir em servicos existentes"
+exec llama-server   --model "$MODEL"   --mmproj "$MMPROJ"   --alias celia-gemma4-e2b   --host 127.0.0.1   --port "$PORT"   --ctx-size 8192   --parallel 1   --n-gpu-layers 99   --flash-attn on   --threads 6   --threads-batch 8   --reasoning off   --reasoning-budget 0

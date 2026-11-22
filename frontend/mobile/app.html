@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#080913"><title>Célia — Modo Móvel</title>
+<link rel="stylesheet" href="/mobile/static/mobile.css"></head>
+<body class="viewer-body">
+<main id="mobile-stage" aria-label="Palco vertical da Célia">
+  <video id="celia-video" playsinline autoplay muted></video>
+  <div id="offline" role="status" aria-live="polite"><strong>CÉLIA · MÓVEL</strong><p>Aguardando a transmissão do PC…</p></div>
+  <header class="mobile-top controls"><button id="settings-toggle" aria-label="Configurações" title="Configurações">☰</button>
+    <span id="connection-status">PC desconectado</span>
+    <button id="fullscreen" aria-label="Tela cheia" title="Tela cheia">⛶</button></header>
+  <aside id="settings" class="settings controls" hidden>
+    <label>Cenário<select id="scene"><option value="black">Preto</option><option value="violet">Roxo</option><option value="blue">Azul</option><option value="green">Verde</option><option value="studio">Estúdio</option></select></label>
+    <label>Corpo<select id="body"><option value="2d">2D Live2D</option><option value="3d">3D VRM</option></select></label>
+    <label>Modelo 3D<select id="model"><option value="celia_v3_web.vrm">Célia V3</option><option value="celia_v4_web.vrm">Célia V4</option></select></label>
+    <button id="center" type="button">Centralizar Célia</button>
+    <button id="unmute" type="button">Ativar áudio</button>
+    <button id="hide-controls" type="button">Ocultar controles</button>
+    <button id="logout" type="button">Sair</button>
+  </aside>
+  <nav id="transform-controls" class="transform-controls controls" aria-label="Mover e ajustar a personagem">
+    <button id="smaller" aria-label="Diminuir Célia" type="button">−</button>
+    <button id="move-character" aria-label="Segure e arraste para mover a Célia" title="Segure e arraste a Célia" type="button">✥</button>
+    <button id="larger" aria-label="Aumentar Célia" type="button">+</button>
+  </nav>
+  <button id="show-controls" type="button" hidden aria-label="Mostrar controles">⚙</button>
+</main><script src="/mobile/static/app.js" defer></script></body></html>

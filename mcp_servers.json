@@ -1,0 +1,103 @@
+{
+  "mcp_servers": {
+    "ddg-search": {
+      "command": "uvx",
+      "args": [
+        "--offline",
+        "duckduckgo-mcp-server"
+      ],
+      "disabled": true,
+      "timeout": 60
+    },
+    "system-automation": {
+      "command": "python",
+      "args": [
+        "mcps/system_automation.py"
+      ],
+      "disabled": true,
+      "timeout": 120
+    },
+    "vision-analysis": {
+      "command": "python",
+      "args": [
+        "mcps/vision_analysis.py"
+      ],
+      "disabled": true,
+      "timeout": 90
+    },
+    "image-generation": {
+      "command": "python",
+      "args": [
+        "mcps/image_generation.py"
+      ],
+      "disabled": true,
+      "timeout": 720
+    },
+    "react-control": {
+      "command": "python",
+      "args": [
+        "mcps/react_control.py"
+      ],
+      "disabled": true
+    },
+    "legendas": {
+      "command": "python",
+      "args": [
+        "mcps/legendas.py"
+      ],
+      "disabled": true
+    },
+    "enquetes": {
+      "command": "python",
+      "args": [
+        "mcps/enquetes.py"
+      ],
+      "disabled": true
+    },
+    "memoria": {
+      "command": "python",
+      "args": [
+        "mcps/memoria.py"
+      ],
+      "disabled": true
+    },
+    "minecraft": {
+      "command": "python",
+      "args": [
+        "mcps/minecraft.py"
+      ],
+      "disabled": true
+    },
+    "celia-vts-v11": {
+      "command": "python",
+      "args": [
+        "extensions/track-vts/mcp-server/celia_vts_mcp.py"
+      ],
+      "disabled": true
+    },
+    "opencode-agent": {
+      "command": "python",
+      "args": [
+        "mcps/opencode_agent.py"
+      ],
+      "disabled": true,
+      "timeout": 120
+    },
+    "jogos": {
+      "command": "python",
+      "args": [
+        "mcps/jogos.py"
+      ],
+      "disabled": true,
+      "timeout": 30
+    },
+    "discord-actions": {
+      "command": "python",
+      "args": [
+        "mcps/discord_actions.py"
+      ],
+      "disabled": true,
+      "timeout": 60
+    }
+  }
+}

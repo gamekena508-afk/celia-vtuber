@@ -1,0 +1,18 @@
+schema_version: 1
+default_enabled: false
+startup_policy: manual_only
+bridge_url: http://127.0.0.1:12393
+# Registro de bots externos (Discord, Minecraft, react...). Neste repositório público nenhum bot é distribuído,
+# então o registro começa vazio. Para registrar um bot seu, crie a pasta e o manifesto e declare-o aqui, por exemplo:
+#
+# bots:
+#   meu_bot:
+#     enabled: false
+#     root: bots/meu_bot
+#     launcher: null
+#     health: heartbeat
+#     restart: on-failure
+#     startup_timeout_sec: 30
+#     launchable: false
+#     manifest: bots/meu_bot/manifest.yaml
+bots: {}
