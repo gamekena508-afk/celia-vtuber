@@ -4,6 +4,8 @@ Uma VTuber de IA com conversa, voz e avatar Live2D, que roda no seu computador.
 Baseada no [Open-LLM-VTuber](https://github.com/Open-LLM-VTuber/Open-LLM-VTuber) (MIT), com um núcleo de comportamento próprio, modo Pet de desktop, ferramentas por MCP e uma interface em português.
 
 > **Estado do projeto:** em desenvolvimento ativo. Parte dos recursos originais (integrações de jogos e bots) **não** está neste repositório. Veja [Limitações conhecidas](#limitações-conhecidas).
+>
+> **Futura integração de voz:** [Contrato público de geração com gate de biometria e seeds adaptativas](docs/CONTRATO-VOZ-V3-PUBLICO.md) (ainda não implantado). O projeto público não inclui datasets, seedmap nem checkpoint de voz privados.
 
 ## Como é
 

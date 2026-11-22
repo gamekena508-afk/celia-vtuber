@@ -101,7 +101,7 @@ vts_token.txt
 # rig binário pesado. O `model3.json`, a física, as expressões e os 13
 # atlas de textura CONTINUAM versionados — são pequenos e a Célia precisa
 # deles rastreados.
-assets/
+/assets/
 web/live2d-models/celia_*_vts/
 web/live2d-models/celia_vts/*.moc3
 
