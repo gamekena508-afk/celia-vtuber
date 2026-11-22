@@ -11,7 +11,7 @@ import time
 import uuid
 import wave
 from datetime import datetime, timezone
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -318,6 +318,7 @@ class TTSEngine(TTSInterface):
         self._generation_lock = _INFERENCE_LOCK
         self._production_options = dict(production_options)
         self._production_validated = False
+        self._last_voice_quality = None
         self._active_preset = "neutra"
         # Fast 16-step mode is opportunistic. Two consecutive empty/invalid
         # waveforms suspend it briefly so later turns jump directly to the
@@ -705,6 +706,13 @@ class TTSEngine(TTSInterface):
             record["voice_routing_id"] = VOICE_ROUTING_ID
             record["parameters"].update(GENERATION_OPTIONS)
             record["parameters"].update(voice_profile_id=selected.name, engine="omnivoice_v2")
+        verified = getattr(self, "_last_voice_quality", None)
+        if verified and status == "ok":
+            record["biometric_verification"] = {
+                "model": "ECAPA-TDNN", "score": verified.get("similarity_ecapa"),
+                "threshold": verified.get("threshold"), "steps": verified.get("steps"),
+                "attempts": verified.get("attempts"), "seed": verified.get("seed"),
+                "evaluations": verified.get("evaluations", [])}
         record_path.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         return record_path
 
@@ -881,7 +889,7 @@ class TTSEngine(TTSInterface):
         if os.getenv("CELIA_OMNIVOICE_DTYPE", "float16").lower() not in {"float16", "fp16"}:
             raise ValueError("production_voice_dtype_must_be_float16")
         self._production_validated = True
-        logger.info("🎙️ profile={} engine=OmniVoice V2 model={} instruct={} seed=7319 ref={} emotion_tags=false",
+        logger.info("🎙️ profile={} engine=OmniVoice V2 model={} instruct={} seed=adaptive steps=10 ref={} emotion_tags=false",
                     VOICE_PROFILE_ID, MODEL_VARIANT_ID, MODEL_INSTRUCT or "none", self.ref_audio.name)
 
     def _uses_central(self):
@@ -896,33 +904,30 @@ class TTSEngine(TTSInterface):
         import gerar_audio
         return gerar_audio
 
-    def _generate_waveform(self, *, seed: int | None = 7319, **kwargs) -> np.ndarray:
-        """Exactly one attempt, fixed RNG and parameters; preserve punctuation."""
-        if seed != 7319:
-            raise ValueError("production_voice_requires_seed_7319")
+    def _generate_waveform(self, *, seed: int | None = None, **kwargs) -> np.ndarray:
+        """Use Central IA's seed intelligence and fail-closed ECAPA gate.
+
+        The private Central IA owns generation and biometric validation.
+        Never synthesize an unchecked in-process fallback for production.
+        """
         for key, expected in GENERATION_OPTIONS.items():
             if kwargs.get(key, expected) != expected:
                 raise ValueError(f"production_voice_parameter_mismatch:{key}")
-        if any(key.startswith("_") or key == "num_step_confiavel" for key in kwargs):
-            raise ValueError("production_voice_disallows_acoustic_retry_options")
         with self._generation_lock:
-            try:
-                if self._uses_central():
-                    result = self._central_client().generate("celia", "pt", kwargs["text"])
-                    waveform, rate = sf.read(result["path"], dtype="float32")
-                    if rate != self.sample_rate:
-                        raise ValueError("Central IA returned an unexpected sample rate")
-                    self._validate_waveform_quality(waveform, kwargs["text"])
-                    return waveform
-                # Loading can consume RNG. Seed only after the model is ready,
-                # exactly as in the human-approved standalone experiment.
-                model = self._load_model()
-                self._apply_seed(7319)
-                waveform = self._first_waveform(model.generate(**kwargs))
-                self._validate_waveform_quality(waveform, str(kwargs.get("text") or ""))
-                return waveform
-            except (RuntimeError, ValueError) as error:
-                raise OmniVoiceSynthesisError(f"OmniVoice V2 synthesis failed: {error}") from error
+            result = self._central_client().generate("celia", "pt", kwargs["text"],
+                                                      num_step=10, emotion=kwargs.get("emotion"))
+            if result.get("status") != "APPROVED" or not result.get("path"):
+                raise OmniVoiceSynthesisError(
+                    "NO_APPROVED_AUDIO: nenhum dos quatro candidatos passou no ECAPA"
+                )
+            if result.get("steps") != 10 or result.get("similarity_ecapa", -1) < 0.60:
+                raise OmniVoiceSynthesisError("Central IA returned an unverified voice")
+            waveform, rate = sf.read(result["path"], dtype="float32")
+            if rate != self.sample_rate:
+                raise OmniVoiceSynthesisError("Central IA returned an unexpected sample rate")
+            self._validate_waveform_quality(waveform, kwargs["text"])
+            self._last_voice_quality = result
+            return waveform
 
     def generate_audio(self, text: str, file_name_no_ext=None, emotion=None, fast=False) -> str:
         """Standard speech uses the approved original/anchor reference router.
@@ -933,11 +938,12 @@ class TTSEngine(TTSInterface):
         run_id = uuid.uuid4().hex
         started_at = datetime.now(timezone.utc).isoformat()
         started = time.monotonic()
-        selected = OmniVoicePreset(VOICE_PROFILE_ID, "V2 production", "Fixed voice", 0.88, 32, 2.0, 7319)
+        selected = OmniVoicePreset(VOICE_PROFILE_ID, "V2 production", "Adaptive verified voice", 0.88, 10, 2.0, None)
         cleaned = ""
         voice_profile = production_descriptor()
         output = None
         error = None
+        self._last_voice_quality = None
         try:
             self._validate_production_assets()
             cleaned = sanitize_production_tts_text(text)
@@ -945,13 +951,15 @@ class TTSEngine(TTSInterface):
                 raise OmniVoiceSynthesisError("empty_production_tts_text")
             voice_profile = production_descriptor(cleaned)
             validate_reference_descriptor(voice_profile)
-            selected = OmniVoicePreset(voice_profile["voice_profile_id"], "V2 production", "Approved reference", 0.88, 32, 2.0, 7319)
+            selected = OmniVoicePreset(voice_profile["voice_profile_id"], "V2 production", "ECAPA verified", 0.88, 10, 2.0, None)
             samples = self._generate_waveform(
-                seed=7319, text=cleaned, language="pt", ref_audio=voice_profile["ref_audio"],
+                text=cleaned, language="pt", emotion=emotion,
+                ref_audio=voice_profile["ref_audio"],
                 ref_text=voice_profile["ref_text"],
                 **({"instruct": MODEL_INSTRUCT} if MODEL_INSTRUCT else {}),
                 **GENERATION_OPTIONS,
             )
+            selected = replace(selected, seed=int(self._last_voice_quality["seed"]))
             output = Path(self._write_waveform(samples, file_name_no_ext)).resolve()
         except Exception as exc:
             error = exc
@@ -966,7 +974,9 @@ class TTSEngine(TTSInterface):
             )
         observability.emit("tts_generated", "service.omnivoice", "ok", {
             "tts_engine": TTS_ENGINE_OMNIVOICE, "audio_generated": True,
-            "voice_profile_id": voice_profile["voice_profile_id"], "seed": 7319,
+            "voice_profile_id": voice_profile["voice_profile_id"], "seed": selected.seed,
+            "similarity_ecapa": self._last_voice_quality.get("similarity_ecapa"),
+            "attempts": self._last_voice_quality.get("attempts"),
         })
         return str(output)
 

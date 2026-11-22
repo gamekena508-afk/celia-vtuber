@@ -1,8 +1,8 @@
-# Contrato público proposto — áudio aprovado (OmniVoice V3)
+# Contrato público — áudio aprovado (OmniVoice V3)
 
-**Status: especificação de API, não funcionalidade implantada no repositório público.**
+**Status: cliente de produção implementado neste checkout e teste simulado aprovado; exige Central IA privada atualizada, sem implantação pública remota nesta execução.**
 
-Este repositório é a superfície pública da Célia. O cliente de fala poderá solicitar áudio a um serviço local/privado por contrato versionado. Não hospeda mapas de seeds, amostras vocais, checkpoints, pesos, hashes de referência, credenciais nem logs de voz.
+Este repositório é a superfície pública da Célia. O cliente de fala solicita áudio aprovado ao serviço local/privado da Central IA; o gerador, o ranking de seeds e a biometria ficam fora deste repositório. Não hospeda mapas de seeds, amostras vocais, checkpoints, pesos, hashes de referência, credenciais nem logs de voz.
 
 ## Pedido (abstrato)
 - `request_id`: identificador opaco para rastreio;
@@ -25,4 +25,4 @@ A seleção de seeds, histórico positivo/negativo, score e limiares de similari
 - **Célia V02/CLI privado:** orquestração de turnos, gestão de fallback de silêncio/erro, telemetria e runtime; não está contido neste repositório.
 - **Central IA local:** motor de síntese, biometria, memória de seeds, histórico de aprovações e logs privados.
 
-**Aviso de compatibilidade:** o motor OmniVoice presente neste checkout contém a rota legada de seed 7319 e 32 steps. O contrato V3 será ativado somente com uma implementação e validação explícitas; este documento não afirma que a atualização já foi aplicada.
+**Aviso de implantação:** a cópia local da rota de produção foi migrada para 10 steps e seed adaptativa (sem fallback sem biometria); não confundir com os presets manuais do laboratório nem com serviços antigos ainda abertos. O CLI privado e a Central IA devem executar versões compatíveis.

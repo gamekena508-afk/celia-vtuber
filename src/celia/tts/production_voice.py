@@ -35,13 +35,13 @@ REFERENCE_PATH = str(Path(REFERENCE_PATH).resolve())
 REFERENCE_SHA256 = "578ff1ec7a7f26c60be866053e8c01d1e023d7e29b44a2c0dfbd5284b6a6b6ba"
 REF_TEXT = "Eu percebi uma coisa curiosa enquanto estava observando aquilo. Todo mundo parecia preocupado com o mesmo problema, mas ninguém estava prestando atenção no que causou tudo isso. Às vezes a resposta está justamente no começo."
 GENERATION_OPTIONS = MappingProxyType({
-    "speed": 0.88, "num_step": 32, "guidance_scale": 2.0,
+    "speed": 0.88, "num_step": 10, "guidance_scale": 2.0,
     "normalize_text": True, "postprocess_output": True,
     "position_temperature": 5.0, "class_temperature": 0.0,
 })
 PRODUCTION_CONFIG = MappingProxyType({
     "model_path": MODEL_PATH, "ref_audio": REFERENCE_PATH, "ref_text": REF_TEXT,
-    "language": "pt", "emotion_tags_enabled": False, "seed": 7319,
+    "language": "pt", "emotion_tags_enabled": False,
     "voice_profile_id": VOICE_PROFILE_ID, **GENERATION_OPTIONS,
 })
 ASSET_HASHES = MappingProxyType({

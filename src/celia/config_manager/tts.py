@@ -45,9 +45,9 @@ class OmniVoiceConfig(I18nMixin):
     language: str = Field("pt", alias="language")
     emotion_tags_enabled: bool = Field(False, alias="emotion_tags_enabled")
     voice_profile_id: str = "CELIA_VOICE_OFICIAL_V1"
-    seed: int = 7319
+    seed: int | None = None
     speed: float = 0.88
-    num_step: int = 32
+    num_step: int = 10
     guidance_scale: float = 2.0
     normalize_text: bool = True
     postprocess_output: bool = True

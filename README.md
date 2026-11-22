@@ -5,7 +5,7 @@ Baseada no [Open-LLM-VTuber](https://github.com/Open-LLM-VTuber/Open-LLM-VTuber)
 
 > **Estado do projeto:** em desenvolvimento ativo. Parte dos recursos originais (integrações de jogos e bots) **não** está neste repositório. Veja [Limitações conhecidas](#limitações-conhecidas).
 >
-> **Futura integração de voz:** [Contrato público de geração com gate de biometria e seeds adaptativas](docs/CONTRATO-VOZ-V3-PUBLICO.md) (ainda não implantado). O projeto público não inclui datasets, seedmap nem checkpoint de voz privados.
+> **Cliente de voz V3 atualizado neste checkout local:** [Contrato público de geração com gate de biometria e seeds adaptativas](docs/CONTRATO-VOZ-V3-PUBLICO.md) (testes locais aprovados; requer Central IA privada executando a versão atualizada). O projeto público não inclui datasets, seedmap nem checkpoint de voz privados.
 
 ## Como é
 
