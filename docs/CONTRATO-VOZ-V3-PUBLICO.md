@@ -4,6 +4,14 @@
 
 Este repositório é a superfície pública da Célia. O cliente de fala solicita áudio aprovado ao serviço local/privado da Central IA; o gerador, o ranking de seeds e a biometria ficam fora deste repositório. Não hospeda mapas de seeds, amostras vocais, checkpoints, pesos, hashes de referência, credenciais nem logs de voz.
 
+## Situação do contrato e limites do repositório público
+
+A implementação do cliente foi sincronizada com o perfil atual do backend local: **OmniVoice V2, 10 passos, seleção de seeds pelo servidor e aceite biométrico obrigatório**. No ambiente privado de desenvolvimento, o fluxo de geração foi validado com síntese real; isso não constitui hospedagem de um serviço público de voz.
+
+O código público aceita `CELIA_VOICE_REFERENCE_WAV` como configuração externa e não depende mais do caminho legado de `coqui-tts-server`. Nenhuma referência vocal, áudio gerado, mapa de seeds, histórico de score ou configuração pessoal deve ser incluído neste repositório.
+
+Os campos `APPROVED` / `NO_APPROVED_AUDIO` expressam o contrato de aceite; o serviço privado é responsável por pontuação, tentativas e gravação do WAV aprovado. O cliente não deve tentar contornar reprovações.
+
 ## Pedido (abstrato)
 - `request_id`: identificador opaco para rastreio;
 - `voice_id`: perfil lógico autorizado (não revela o arquivo de voz);

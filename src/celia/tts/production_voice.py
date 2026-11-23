@@ -30,7 +30,7 @@ else:
     raise ValueError(f"unknown_omnivoice_model_profile:{MODEL_PROFILE}")
 MODEL_PATH = str(Path(os.environ.get("CELIA_OMNIVOICE_MODEL_DIR") or DEFAULT_MODEL_PATH).resolve())
 REFERENCE_PATH = os.environ.get("CELIA_VOICE_REFERENCE_WAV") or str(
-    _IA_AUDIO / "coqui-tts-server" / "reference_voices" / "celia-oficial-v2.wav")
+    _IA_AUDIO.parent / "data" / "referencias-voz" / "oficiais-xtts-migradas" / "celia-oficial-v2.wav")
 REFERENCE_PATH = str(Path(REFERENCE_PATH).resolve())
 REFERENCE_SHA256 = "578ff1ec7a7f26c60be866053e8c01d1e023d7e29b44a2c0dfbd5284b6a6b6ba"
 REF_TEXT = "Eu percebi uma coisa curiosa enquanto estava observando aquilo. Todo mundo parecia preocupado com o mesmo problema, mas ninguém estava prestando atenção no que causou tudo isso. Às vezes a resposta está justamente no começo."

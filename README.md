@@ -7,6 +7,14 @@ Baseada no [Open-LLM-VTuber](https://github.com/Open-LLM-VTuber/Open-LLM-VTuber)
 >
 > **Cliente de voz V3 atualizado neste checkout local:** [Contrato público de geração com gate de biometria e seeds adaptativas](docs/CONTRATO-VOZ-V3-PUBLICO.md) (testes locais aprovados; requer Central IA privada executando a versão atualizada). O projeto público não inclui datasets, seedmap nem checkpoint de voz privados.
 
+## Voz e compatibilidade com o backend
+
+O cliente de voz público utiliza o contrato **OmniVoice V2 / 10 passos / seeds adaptativas / gate biométrico**. A geração e a aprovação ocorrem no serviço local conectado; este repositório **não distribui motor de síntese, dados biométricos, referências, seedmaps ou modelos privados**.
+
+A referência de voz pode ser configurada pela variável `CELIA_VOICE_REFERENCE_WAV`; o caminho legado do XTTS foi removido do perfil sincronizado. O cliente deve reproduzir apenas um WAV aprovado: respostas sem áudio aprovado não autorizam publicação ou fallback vocal sem validação.
+
+**Documentação pública:** [contrato de voz e estados de aprovação](docs/CONTRATO-VOZ-V3-PUBLICO.md). Este README descreve a integração do cliente, não a operação interna do motor privado.
+
 ## Como é
 
 | Escolha do corpo | Interface com o avatar |
