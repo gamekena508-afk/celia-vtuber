@@ -50,6 +50,10 @@ def fetch_hud(now: float | None = None) -> dict[str, Any]:
                 payload = json.loads(response.read().decode("utf-8"))
             if not isinstance(payload, dict) or payload.get("ok") is not True:
                 payload = _unavailable("bad_daemon_answer")
+        except ModuleNotFoundError as exc:
+            if exc.name not in ("celia_minecraft", "celia_minecraft.control"):
+                raise
+            payload = _unavailable("jev_daemon_offline")
         except (OSError, ValueError, PermissionError):
             payload = _unavailable("jev_daemon_offline")
         _cache.update(at=moment, payload=payload)

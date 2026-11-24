@@ -53,8 +53,12 @@ def test_browser_mute_blocks_pet_and_syncs_reconnect(behavior, monkeypatch):
             pet.send_json({"type": "microphone-state-set", "enabled": True})
             assert pet.receive_json()["enabled"] is True
             assert ui.receive_json()["enabled"] is True
-            # No actual audio/model call: show that speech.started now reaches the route.
-            pet.send_json({"type": "speech.started", "utterance_id": "unmuted"})
+            # Pet must not send a duplicate while the control window owns capture.
+            pet.send_json({"type": "speech.started", "utterance_id": "duplicate"})
+            pet.send_json({"type": "heartbeat"})
+            assert pet.receive_json()["type"] == "heartbeat-ack"
+            # The authorized control window reaches the route.
+            ui.send_json({"type": "speech.started", "utterance_id": "unmuted"})
             assert pet.receive_json()["type"] == "speech.started"
             assert ui.receive_json()["utterance_id"] == "unmuted"
             ui.send_json({"type": "microphone-state-set", "enabled": "false"})

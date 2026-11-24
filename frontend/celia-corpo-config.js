@@ -114,7 +114,7 @@
   // ---------- slime sobre a cabeca ----------
   let slime = null, slimeCarregadoEm = 0, boca = 0, slimeCore = null, slimeHookado = null;
   let piscar = { prox: 2, t: -1 };
-  // Referencia do Pai (VTube Studio, backup antigo suiika_1_05_b2/items_pinned_to_model.json): o slime ia PRESO ao ArtMesh "face_skin4" da Celia,
+  // Referencia do Pai (VTube Studio, backup antigo items_pinned_to_model.json): o slime ia PRESO ao ArtMesh "face_skin4" da Celia,
   // vertices 81 99 88 80 97 87, com PinnedVertexCenterOffset (-0.0009, +0.047) e rotacao ~1 grau; Tamaneko com a expressao "head only" (so a cabeca).
   // Medido neste runtime: o drawable "face_skin4" existe e esses 6 vertices dao y 0.762..0.766, igual ao arquivo antigo (0.765).
   const PIN_MALHA = "face_skin4", PIN_VERTICES = [81, 99, 88, 80, 97, 87], PIN_DESLOC = [-0.0009, 0.047];
@@ -157,25 +157,78 @@
     const m = estado.mic, th = Math.max(0.005, m.th);
     return (m.ativo || m.rms > th) ? Math.min(1, Math.max(0, (m.rms - th * 0.5) / (th * 1.25)  /* regua mais 50% menor (Pai, 2026-10-19): ainda ficava fraca; antes th*5 -> th*2.5 -> th*1.25 */)) : 0;
   }
+  function montarOrigemAudio() {
+    const box = document.createElement("section");
+    box.style.cssText = "margin:12px 0;padding:12px;border:1px solid #6580ac;border-radius:8px;display:grid;gap:8px";
+    const heading = document.createElement("strong");
+    heading.textContent = "Origem do microfone (ASR)";
+    const select = document.createElement("select");
+    select.setAttribute("aria-label", "Origem do microfone");
+    for (const [value, label] of [["auto","Automático — Discord primeiro"],["discord","Somente Discord"],["window","Somente janela"]]) {
+      const option = document.createElement("option"); option.value=value; option.textContent=label; select.append(option);
+    }
+    const label = document.createElement("label");
+    const follow = document.createElement("input"); follow.type="checkbox";
+    label.append(follow, " Seguir meu canal de voz");
+    const status = document.createElement("small");
+    let saving = false;
+    function render(data) {
+      select.value=data.mode; follow.checked=data.follow;
+      const source = {discord:"Discord",window:"Janela",none:"Sem fonte"}[data.source];
+      const capture = window.__micToggle?.captureStatus?.();
+      const local = capture?.error ? " | Erro mic: " + capture.error : capture?.physical ? " | Mic físico ativo" : " | Mic físico livre";
+      status.textContent = "Fonte: " + source + " | " + (data.discord_connected ? "Célia em call" : "Célia fora da call") + " | " + (data.follow ? "Seguindo" : "Ficar aqui") + local;
+    }
+    async function refresh() {
+      if (saving || !box.isConnected) return;
+      try {
+        const r = await fetch("/bridge/audio-source", {cache:"no-store"});
+        if (!r.ok) throw Error("HTTP "+r.status);
+        render(await r.json());
+      } catch (_) { status.textContent="Estado de áudio indisponível"; }
+    }
+    async function save(patch) {
+      saving=true;
+      try {
+        const r=await fetch("/bridge/audio-source",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(patch)});
+        if(!r.ok) throw Error("HTTP "+r.status);
+        render(await r.json());
+      } catch (_) { status.textContent="Não foi possível salvar a origem"; }
+      finally { saving=false; }
+    }
+    select.onchange=()=>save({mode:select.value});
+    follow.onchange=()=>save({follow:follow.checked});
+    const mic = document.createElement("button");
+    mic.type="button"; mic.textContent="Ligar/desligar microfone local";
+    mic.onclick=()=>window.__micToggle?.toggle();
+    box.append(heading,select,label,mic,status);
+    setTimeout(refresh,0);
+    const timer=setInterval(()=>{if(!box.isConnected)clearInterval(timer);else refresh();},1000);
+    return box;
+  }
+
   function alvoBocaSlime() {
     // Modo Live: a boca do slime segue o AUDIO que ele proprio toca (celia-live-personagens.js), nunca o microfone do dono
     if (window.celiaLive && window.celiaLive.ativo()) { estado.bocaFonte = "audio_do_slime"; return window.celiaLive.boca("slime"); }
-    if (window.__micToggle && !window.__micToggle.state()) { estado.bocaFonte = "mudo"; return 0; }
+    // Discord RMS comes from the authorized owner's account, not other callers.
+    if (estado.remoto.fonte === "discord") { estado.bocaFonte = "discord_dono"; return estado.remoto.boca; }
+    if (window.__micToggle && !window.__micToggle.manualState()) { estado.bocaFonte = "mudo"; return 0; }
     // The Pet can own the ASR microphone while the ordinary browser has no stream.
     const local = estado.mic.capturando && performance.now() - estado.mic.em < 500;
     estado.bocaFonte = local ? "microfone_local" : PET ? "interface_remota" : "sem_captura";
-    return local ? alvoBoca() : PET ? estado.remoto.boca : 0;
+    return local ? alvoBoca() : estado.remoto.boca;
   }
   function petLigado() {
     try { const st = window.celiaBrowserPet && window.celiaBrowserPet.state(); return Boolean(st && (st.desktopPetLaunch === "requested" || st.desktopPetLaunch === "pending" || st.petRequested)); } catch (_) { return false; }
   }
   let ultimaBocaPub = -1, ultimaBocaEm = 0;
   function publicarBoca() { // interface -> servidor -> Pet. So com o Pet ligado e o slime ligado; so quando muda; no maximo a cada 100 ms
-    if (PET || !PUBLICAR || !estado.slime) return; // 2026-10-25: sem exigir o Pet de desktop; o estudio mobile (pet=1) tambem le a boca daqui
+    if (!PUBLICAR || !estado.slime || !window.__micToggle?.state()) return;
     const v = Math.round((window.celiaLive && window.celiaLive.ativo() ? window.celiaLive.boca("slime") : alvoBoca()) * 20) / 20, agora = performance.now();
     if (v === ultimaBocaPub && agora - ultimaBocaEm < 400) return;
     if (agora - ultimaBocaEm < 100) return;
-    ultimaBocaPub = v; ultimaBocaEm = agora; postar({ boca: v });
+    ultimaBocaPub = v; ultimaBocaEm = agora;
+    fetch(ROTA, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({boca:v})}).catch(()=>{});
   }
   function aplicarSlime() {
     const mgr = gerente(); if (!mgr || !slime) return;
@@ -274,11 +327,11 @@
     try {
       const r = await fetch(ROTA, { cache: "no-store" }); if (!r.ok) throw new Error("http_" + r.status);
       const d = await r.json();
-      estado.remoto.ok = true; estado.remoto.boca = Number(d.boca) || 0;
+      estado.remoto.ok = true; estado.remoto.boca = Number(d.boca) || 0; estado.remoto.fonte = d.audio_source || "window";
       const o = d.oculos === true, sl = d.slime === true;
       if (PET && (o !== estado.oculos || sl !== estado.slime)) { estado.oculos = o; estado.slime = sl; aplicar(); } // so o Pet segue oculos/slime; a interface e a dona deles
       adotarHudDoServidor(d); // a HUD e a unica opcao que a interface tambem le do servidor (a voz grava la)
-    } catch (_) { estado.remoto.ok = false; estado.remoto.boca = 0; }
+    } catch (_) { estado.remoto.ok = false; estado.remoto.boca = 0; estado.remoto.fonte = null; }
   }
   // HUD Minecraft: o servidor manda (a voz grava la). Logo depois de um toque local ignora a leitura por 2 s, para o POST chegar antes.
   let toqueHudEm = 0;
@@ -289,10 +342,10 @@
     if (typeof d.hud_minecraft !== "boolean" || Date.now() - toqueHudEm < 2000) return;
     if (d.hud_minecraft !== estado.hud_minecraft) { estado.hud_minecraft = d.hud_minecraft; sincronizarSwitches(); if (!PET) { try { localStorage.setItem(CHAVE, JSON.stringify({ oculos: estado.oculos, slime: estado.slime, hud_minecraft: estado.hud_minecraft })); } catch (_) { /* sem storage */ } } }
   }
-  if (PET) { seguirServidor(); setInterval(seguirServidor, 250); }
+  if (PET) { seguirServidor(); setInterval(seguirServidor, 100); }
   else {
     if (PUBLICAR) postar({ oculos: estado.oculos, slime: estado.slime }); // a interface entrega ao Pet o que o Pai ja tinha escolhido (a HUD NAO: o servidor e a verdade dela)
-    seguirServidor(); setInterval(seguirServidor, 1000);
+    seguirServidor(); setInterval(seguirServidor, 150);
   }
 
   // ---------- interface ----------
@@ -722,7 +775,7 @@
       }catch(e){ouvido.textContent='Tentar ligar ouvido novamente';}
       finally{ouvido.disabled=false;}
     };
-    stack4.append(ouvido);
+    stack4.append(ouvido, montarOrigemAudio());
     const stack5 = stack.cloneNode(false);
     stack5.append(clonarLinha(modelo, "Enquete da live (mobile)", "enquete_mobile"));
     stack5.append(clonarLinha(modelo, "Célia lê o chat do TikTok", "chat_tiktok"));

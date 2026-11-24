@@ -21,7 +21,7 @@ def _chamar(metodo, corpo=None, cliente=("testclient", 50000)):
 
 def test_padrao_sem_arquivo(monkeypatch, tmp_path):
     monkeypatch.setattr(bridge_routes, "VAR", tmp_path)
-    assert _chamar("GET").json() == {"oculos": False, "slime": False, "hud_minecraft": False, "modo_minecraft": True, "enquete_mobile": False, "chat_tiktok": True, "boca": 0.0}
+    assert _chamar("GET").json() == {"oculos": False, "slime": False, "hud_minecraft": False, "modo_minecraft": True, "enquete_mobile": False, "chat_tiktok": True, "boca": 0.0, "audio_source": "window"}
 
 
 def test_grava_so_o_que_mudou_e_persiste(monkeypatch, tmp_path):
@@ -52,7 +52,7 @@ def test_valor_invalido_e_rede_externa_recusados(monkeypatch, tmp_path):
 def test_arquivo_antigo_sem_hud_migra_sem_perder_oculos_e_slime(monkeypatch, tmp_path):
     monkeypatch.setattr(bridge_routes, "VAR", tmp_path)
     (tmp_path / "celia_corpo_opcoes.json").write_text('{"oculos": true, "slime": true}', encoding="utf-8")
-    assert _chamar("GET").json() == {"oculos": True, "slime": True, "hud_minecraft": False, "modo_minecraft": True, "enquete_mobile": False, "chat_tiktok": True, "boca": 0.0}  # arquivo antigo: Modo Minecraft herda ligado
+    assert _chamar("GET").json() == {"oculos": True, "slime": True, "hud_minecraft": False, "modo_minecraft": True, "enquete_mobile": False, "chat_tiktok": True, "boca": 0.0, "audio_source": "window"}  # arquivo antigo: Modo Minecraft herda ligado
     r = _chamar("POST", {"hud_minecraft": True}).json()
     assert r["hud_minecraft"] is True and r["oculos"] is True and r["slime"] is True  # ligar a HUD nao mexe nas outras opcoes
     r = _chamar("POST", {"oculos": False}).json()
@@ -64,7 +64,7 @@ def test_hud_e_um_unico_booleano_nao_existem_chaves_por_painel(monkeypatch, tmp_
     for chave in ("inventario", "mapa", "bussola", "inventario_enabled", "mapa_enabled", "bussola_enabled"):
         _chamar("POST", {chave: True})  # campo desconhecido e ignorado, nunca persistido
     assert not (tmp_path / "celia_corpo_opcoes.json").exists()
-    assert set(_chamar("GET").json()) == {"oculos", "slime", "hud_minecraft", "modo_minecraft", "enquete_mobile", "chat_tiktok", "boca"}
+    assert set(_chamar("GET").json()) == {"oculos", "slime", "hud_minecraft", "modo_minecraft", "enquete_mobile", "chat_tiktok", "boca", "audio_source"}
     _chamar("POST", {"hud_minecraft": True})
     assert set(__import__("json").loads((tmp_path / "celia_corpo_opcoes.json").read_text())) == {"oculos", "slime", "hud_minecraft", "modo_minecraft", "enquete_mobile", "chat_tiktok"}
     assert _chamar("POST", {"hud_minecraft": "talvez"}).status_code == 422

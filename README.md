@@ -7,6 +7,10 @@ Baseada no [Open-LLM-VTuber](https://github.com/Open-LLM-VTuber/Open-LLM-VTuber)
 >
 > **Cliente de voz V3 atualizado neste checkout local:** [Contrato público de geração com gate de biometria e seeds adaptativas](docs/CONTRATO-VOZ-V3-PUBLICO.md) (testes locais aprovados; requer Central IA privada executando a versão atualizada). O projeto público não inclui datasets, seedmap nem checkpoint de voz privados.
 
+## Isolamento de áudio
+
+O Pet e as saídas visuais não devem abrir microfone físico. O ASR usa uma origem autorizada por vez; animações reutilizam o RMS existente. O aplicativo não altera o áudio global do sistema. Consulte o [contrato de isolamento de áudio](docs/CONTRATO-ISOLAMENTO-AUDIO.md) e os [testes de regressão](docs/TESTES.md). A integração Discord e a proteção nativa Electron não são distribuídas neste pacote.
+
 ## Voz e compatibilidade com o backend
 
 O cliente de voz público utiliza o contrato **OmniVoice V2 / 10 passos / seeds adaptativas / gate biométrico**. A geração e a aprovação ocorrem no serviço local conectado; este repositório **não distribui motor de síntese, dados biométricos, referências, seedmaps ou modelos privados**.

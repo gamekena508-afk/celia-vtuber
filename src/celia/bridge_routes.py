@@ -1150,6 +1150,29 @@ def init_bridge_routes(default_context_cache: ServiceContext) -> APIRouter:
             raise HTTPException(status_code=404, detail="pessoa_desconhecida")
         return {"ok": True, "person": result}
 
+    @router.get("/audio-source")
+    async def get_audio_source(request: Request):
+        _require_loopback(request)
+        from .core.audio_source import status
+        return status()
+
+    @router.post("/audio-source")
+    async def set_audio_source(request: Request):
+        _require_loopback(request)
+        from .core.audio_source import configure, status
+        body = await request.json()
+        if not isinstance(body, dict) or not body or set(body) - {"mode", "follow"}:
+            raise HTTPException(status_code=422, detail="invalid_audio_source")
+        if "mode" in body and not isinstance(body["mode"], str):
+            raise HTTPException(status_code=422, detail="invalid_audio_source")
+        if "follow" in body and type(body["follow"]) is not bool:
+            raise HTTPException(status_code=422, detail="invalid_follow")
+        try:
+            configure(**body)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return status()
+
     @router.get("/desktop-pet/state")
     async def desktop_pet_state(request: Request):
         """Somente leitura: o Pet esta LIGADO (`enabled` em var/desktop_pet.json)?
@@ -1205,7 +1228,10 @@ def init_bridge_routes(default_context_cache: ServiceContext) -> APIRouter:
         """Opcoes do corpo (oculos/slime/HUD Minecraft) + boca do slime. O Pet Electron nao divide o localStorage da interface: le daqui."""
         _require_loopback(request)
         fresca = (time.time() - _BOCA_SLIME["em"]) < _BOCA_VALIDADE_S
-        return {**_ler_opcoes(), "boca": _BOCA_SLIME["v"] if fresca else 0.0}
+        from .core.audio_source import active_source, owner_level
+        source = active_source()
+        boca = owner_level() if source == "discord" else (_BOCA_SLIME["v"] if fresca and source == "window" else 0.0)
+        return {**_ler_opcoes(), "boca": boca, "audio_source": source}
 
     @router.post("/corpo-opcoes")
     async def set_corpo_opcoes(request: Request, op: CorpoOpcoes):

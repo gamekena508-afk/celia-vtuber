@@ -169,6 +169,14 @@ def init_client_ws_route(
     visual_speech = SpeechActivity()
     from .core.microphone_gate import MicrophoneGate
     microphone_gate = MicrophoneGate()
+    microphone_clients = {}
+
+    async def publish_microphone_state():
+        for uid, ws in list(microphone_clients.items()):
+            try:
+                await ws.send_json(microphone_gate.snapshot(uid))
+            except Exception:
+                pass
     logger.info("[ASR PIPELINE] deterministic-chat-20260921; refinement=disabled")
 
     if singleton is not None:
@@ -215,6 +223,9 @@ def init_client_ws_route(
                 # Registra no singleton e envia estado inicial
                 await singleton.register(client_uid, websocket, role, playback_client)
                 await singleton.send_initial_state(websocket)
+                if role == "browser":
+                    microphone_gate.register(client_uid, playback_client)
+                    microphone_clients[client_uid] = websocket
 
                 # SINCRONIA: Envia o histórico atual para o novo cliente
                 # assim ele já "entra" na conversa que está rolando sem criar uma nova.
@@ -351,7 +362,7 @@ def init_client_ws_route(
                     if live_gate.owner_input_blocked():
                         return
                     revision = capture_revision
-                    if not microphone_gate.accepts(revision):
+                    if not microphone_gate.accepts(revision, client_uid):
                         return
                     started = time.monotonic()
                     try:
@@ -361,7 +372,7 @@ def init_client_ws_route(
                     except Exception as exc:
                         logger.debug("partial ASR unavailable: %s", type(exc).__name__)
                         return
-                    if not microphone_gate.accepts(revision):
+                    if not microphone_gate.accepts(revision, client_uid):
                         return
                     if not transcript or not transcript.strip() or utterance_id != active_utterance_id:
                         return
@@ -454,16 +465,16 @@ def init_client_ws_route(
                             # Shared desktop microphone gate: browser and Electron Pet
                             # have separate JS contexts/storage, but one server authority.
                             if msg_type == "microphone-state-get":
-                                await websocket.send_json(microphone_gate.snapshot())
+                                await websocket.send_json(microphone_gate.snapshot(client_uid))
                                 continue
                             if msg_type == "microphone-state-set":
                                 if role != "browser" or type(data.get("enabled")) is not bool:
-                                    await websocket.send_json(microphone_gate.snapshot())
+                                    await websocket.send_json(microphone_gate.snapshot(client_uid))
                                     continue
                                 microphone_gate.set_enabled(data["enabled"])
                                 logger.info("[MIC] enabled={} revision={} client={}",
                                             microphone_gate.enabled, microphone_gate.revision, client_uid)
-                                await singleton.broadcast(microphone_gate.snapshot())
+                                await publish_microphone_state()
                                 continue
                             if capture_revision != microphone_gate.revision:
                                 audio_buffer = np.array([], dtype=np.float32)
@@ -474,7 +485,7 @@ def init_client_ws_route(
                                     partial_asr_task.cancel()
                                 capture_revision = microphone_gate.revision
                             if msg_type in {"speech.started", "mic-audio-data", "mic-audio-end"}:
-                                if not microphone_gate.enabled:
+                                if not microphone_gate.enabled or not microphone_gate.client_allowed(client_uid):
                                     continue
                                 data["_mic_revision"] = microphone_gate.revision
 
@@ -856,7 +867,7 @@ def init_client_ws_route(
                         
                         try:
                             msg_type = data.get("type", "")
-                            if msg_type == "mic-audio-end" and not microphone_gate.accepts(data.get("_mic_revision")):
+                            if msg_type == "mic-audio-end" and not microphone_gate.accepts(data.get("_mic_revision"), client_uid):
                                 continue
                             queued_audio_snapshot = data.pop("_audio_snapshot", None)
                             queued_capture_elapsed_ms = data.pop("_capture_elapsed_ms", 0)
@@ -1188,7 +1199,7 @@ def init_client_ws_route(
                                             model=str(getattr(ctx.asr_engine, "model", "") or ""),
                                         )
                                         transcribed = await ctx.asr_engine.async_transcribe_np(asr_input)
-                                        if not microphone_gate.accepts(data.get("_mic_revision")):
+                                        if not microphone_gate.accepts(data.get("_mic_revision"), client_uid):
                                             continue
                                         final_latency_ms = int((time.monotonic() - final_started) * 1000)
                                         latency_trace.mark(
@@ -1634,10 +1645,20 @@ def init_client_ws_route(
                                                 route_status="ASR_ACCEPTED",
                                             )
 
-                                            if not microphone_gate.accepts(data.get("_mic_revision")):
+                                            if not microphone_gate.accepts(data.get("_mic_revision"), client_uid):
                                                 continue
                                             # Fala por voz (mic) é sempre o dono do PC.
                                             mic_speaker = mic_speaker_for_context(ctx)
+                                            from .core.audio_source import follow_intent, configure
+                                            if (role == "browser" and websocket.client is not None
+                                                    and websocket.client.host in ("127.0.0.1", "::1")
+                                                    and not continuous_behavior.probable_self_echo(transcribed)):
+                                                follow = follow_intent(transcribed)
+                                                if follow is not None:
+                                                    configure(follow=follow)
+                                                    await websocket.send_json({"type": "audio-follow-state", "follow": follow})
+                                                    logger.info("[Discord] local owner follow={}", follow)
+                                                    continue
                                             profile_intent = detect_profile_switch_intent(transcribed)
                                             if profile_intent.should_switch:
                                                 snapshot = await apply_profile_switch(
@@ -1828,7 +1849,7 @@ def init_client_ws_route(
                                                     continue
                                                 else:
                                                     logger.info("[Roteiro] fala imprevista com comando: agente + TTS fixo")
-                                                if not microphone_gate.accepts(data.get("_mic_revision")):
+                                                if not microphone_gate.accepts(data.get("_mic_revision"), client_uid):
                                                     continue
                                                 continuous_behavior.invalidate_inflight_reply("owner_turn_submitted")
                                                 await singleton.submit_input(
@@ -1864,7 +1885,7 @@ def init_client_ws_route(
                                             if intent == "INTROSPECTION":
                                                 # Gatilho do monólogo interno (Plano 4)
                                                 input_for_celia = cognitive_loop.introspection_prompt() or transcribed
-                                                if not microphone_gate.accepts(data.get("_mic_revision")):
+                                                if not microphone_gate.accepts(data.get("_mic_revision"), client_uid):
                                                     continue
                                                 continuous_behavior.invalidate_inflight_reply("owner_turn_submitted")
                                                 await singleton.submit_input(
@@ -1918,7 +1939,7 @@ def init_client_ws_route(
                                                         route_status="ROUTING_SUPPRESSED",
                                                     )
                                                     continue
-                                                if not microphone_gate.accepts(data.get("_mic_revision")):
+                                                if not microphone_gate.accepts(data.get("_mic_revision"), client_uid):
                                                     continue
                                                 continuous_behavior.invalidate_inflight_reply("owner_turn_submitted")
                                                 await singleton.submit_input(
@@ -1951,7 +1972,7 @@ def init_client_ws_route(
                                                     transcribed, source="microphone"
                                                 )
                                                 if direct_decision and direct_decision["decision"] in {"SPEAK", "INTERRUPT"}:
-                                                    if not microphone_gate.accepts(data.get("_mic_revision")):
+                                                    if not microphone_gate.accepts(data.get("_mic_revision"), client_uid):
                                                         continue
                                                     continuous_behavior.invalidate_inflight_reply("owner_turn_submitted")
                                                     await singleton.submit_input(
@@ -1986,7 +2007,7 @@ def init_client_ws_route(
                                                     direct_address.criador_script_lines(continuous_behavior.script.beats),
                                                 )
                                                 if address:
-                                                    if not microphone_gate.accepts(data.get("_mic_revision")):
+                                                    if not microphone_gate.accepts(data.get("_mic_revision"), client_uid):
                                                         continue
                                                     from .core.screen_vision import screen_vision as _sv
                                                     _last, _age = _sv.last_analysis()
@@ -2306,6 +2327,8 @@ def init_client_ws_route(
             except Exception as e:
                 logger.error(f"Erro na conexão singleton {client_uid}: {e}")
             finally:
+                microphone_clients.pop(client_uid, None)
+                microphone_gate.unregister(client_uid)
                 await singleton.unregister(client_uid)
                 message_handler.cleanup_client(client_uid)
 

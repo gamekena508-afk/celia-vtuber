@@ -332,6 +332,10 @@ window.CELIA_DOCS = {
         "group": "body",
         "sections": [
           {
+            "title": "Isolamento de áudio — contrato de segurança",
+            "text": "Pet e demais superfícies visuais não devem abrir o microfone físico. A animação do mascote reutiliza o RMS do áudio já capturado. Uma única fonte autorizada alimenta o ASR; mute e troca de fonte afetam somente a captura da aplicação. Nunca modificar o microfone global nem os serviços de áudio do sistema. Requisito de homologação, ainda não certificado no pacote público atual."
+          },
+          {
             "title": "Abertura no desktop",
             "text": "O lançador do Pet abre a página servida pela Célia em uma janela Electron transparente. O modo de palco isola a apresentação do avatar. O runtime conversacional continua servindo a sessão; chamadas repetidas podem focar a janela existente."
           },
@@ -1028,6 +1032,10 @@ window.CELIA_DOCS = {
         "group": "body",
         "sections": [
           {
+            "title": "Audio isolation — safety contract",
+            "text": "Pet and other presentation surfaces must never open a physical microphone. Mascot animation reuses RMS from existing audio. Only one authorized source feeds ASR; mute and source switching affect app-owned capture only. Never change global microphone settings or system audio services. This is a release acceptance requirement, not a certification of the current public package."
+          },
+          {
             "title": "Electron shell",
             "text": "The launcher opens an Electron window with the Célia client in stage mode. The main runtime still hosts the conversation. A second launch can bring the existing Pet to focus."
           },
@@ -1642,6 +1650,10 @@ window.CELIA_DOCS = {
         "group": "body",
         "sections": [
           {
+            "title": "音声分離の安全要件",
+            "text": "Pet と表示専用画面は物理マイクを開いてはなりません。マスコットの動きは既存音声の RMS を再利用します。ASR の入力は許可された一つの音源に限定し、ミュートと切替はアプリ自身の収音だけに適用します。OS のマイク設定や音声サービスは変更しません。これは公開版の検証要件であり、現行版の認証ではありません。"
+          },
+          {
             "title": "起動と操作",
             "text": "Electron のランチャーがステージ表示のクライアントを開きます。対話は既存のランタイムが処理し、再起動要求で既存のウィンドウに切り替えられます。"
           },
@@ -2252,6 +2264,10 @@ window.CELIA_DOCS = {
         "group": "body",
         "sections": [
           {
+            "title": "Aislamiento de audio — contrato de seguridad",
+            "text": "Pet y las superficies de presentación no deben abrir el micrófono físico. La animación de la mascota reutiliza el RMS del audio existente. Una sola fuente autorizada alimenta el ASR; el silencio y los cambios de fuente afectan únicamente a la captura de la aplicación. Nunca modificar el micrófono global ni los servicios de audio del sistema. Requisito de validación, no certificación de la versión pública actual."
+          },
+          {
             "title": "Inicio y ventana",
             "text": "El lanzador abre el cliente en modo escenario dentro de una ventana transparente. El runtime de Célia sigue prestando la sesión y una segunda apertura puede enfocar la ventana existente."
           },
@@ -2861,6 +2877,10 @@ window.CELIA_DOCS = {
         "kicker": "Body 与 3D 世界",
         "group": "body",
         "sections": [
+          {
+            "title": "音频隔离安全约定",
+            "text": "Pet 和其他展示界面不得打开物理麦克风。吉祥物动画复用现有音频的 RMS。仅一个已授权的音源可进入 ASR；静音和音源切换只影响应用自身的采集。不得修改系统全局麦克风设置或音频服务。这是发布验收要求，并不代表当前公开版本已通过验证。"
+          },
           {
             "title": "启动与交互",
             "text": "启动器让 Electron 使用舞台模式打开 Célia 客户端。已有运行时继续提供对话，再次打开可聚焦现有窗口。窗口负责鼠标穿透和拖动手势。"

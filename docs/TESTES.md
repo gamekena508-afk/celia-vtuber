@@ -17,6 +17,7 @@ Use o `pytest-asyncio` instalado normalmente (não force `-p pytest_asyncio`). D
 
 As falhas restantes vêm de peças que **não fazem parte deste repositório público** ou de configuração que vem enxuta:
 
+- Gate obrigatório de regressão de áudio: [Contrato de isolamento de áudio](CONTRATO-ISOLAMENTO-AUDIO.md). A versão pública deve provar que superfícies de apresentação não capturam microfone. Testes leves: `node tests/test_mic_physical_release.js`, `node tests/test_mic_physical_release.js --pet`, `node tests/test_mic_toggle_sync.js` e `python -m pytest -q tests/test_audio_source.py tests/test_microphone_gate.py tests/test_bridge_corpo_opcoes.py`. Testes simulados não equivalem à homologação física.
 - Arquivos e módulos não publicados: roteiros de gravação, janela Pet em Electron (`tools/pet-electron`), jogos, integração Minecraft, bots de Discord/Twitch, scripts `.sh`.
 - `config/image-identities.json` e a lista de palavras do filtro de fala (`integrations/tiktok_chat/*.json`) vêm sem conteúdo pessoal.
 - `config/model_chains.yaml` vem sem a seção de cotas dos provedores.
