@@ -573,6 +573,7 @@ class BridgeResponse(BaseModel):
     elapsed_ms: int | None = None
     audio_paths: list[str] = Field(default_factory=list)
     speech_id: str | None = None
+    playback_destination: str | None = None
     # The existing Célia emotion engine selected for this turn, when the
     # singleton is available. External adapters may translate it to a body.
     emotion: str | None = None
@@ -1956,6 +1957,8 @@ def init_bridge_routes(default_context_cache: ServiceContext) -> APIRouter:
                                       elapsed_ms=int((time.time()-start_time)*1000),emotion=emotion)
 
             speech_id = None
+            from .core.settings_preferences import discord_reply_destination
+            playback_destination = discord_reply_destination(request.interaction_kind) if _origin == "discord" else None
             # Recording subtitles belong to playback, including bridge callers.
             if full_response and continuous_behavior.profile != "roteiro":
                 await singleton.broadcast(_bridge_approved_event(full_response))
@@ -2022,6 +2025,9 @@ def init_bridge_routes(default_context_cache: ServiceContext) -> APIRouter:
                             duration_sec=(len(volumes) * slice_length_ms) / 1000.0,
                         )
                         singleton.set_playback_status(speech_id, "pending")
+                        if playback_destination == "discord":
+                            playback_payload["audio"] = None
+                            playback_payload["playback_observer"] = True
                         await singleton.broadcast(playback_payload)
                         await singleton.broadcast(
                             {
@@ -2079,6 +2085,7 @@ def init_bridge_routes(default_context_cache: ServiceContext) -> APIRouter:
                 elapsed_ms=elapsed_ms,
                 audio_paths=audio_paths,
                 speech_id=speech_id,
+                playback_destination=playback_destination,
                 emotion=emotion,
             )
 

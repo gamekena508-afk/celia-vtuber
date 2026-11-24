@@ -80,20 +80,16 @@
     const legacyPanel = dialog.querySelector('[role="tabpanel"][id$="content-agent"]');
     if (!tab || !legacyPanel) return;
 
-    if (tab.textContent !== "Runtime") tab.textContent = "Runtime";
-    // so escreve se mudou: setAttribute com o mesmo valor ainda gera registro de mutacao (medido: 16 por 2,5 s em repouso)
-    if (tab.getAttribute("aria-label") !== "Runtime atual") tab.setAttribute("aria-label", "Runtime atual");
-    if (tab.title !== "Configuração real do processo") tab.title = "Configuração real do processo";
-
+    const nav = window.celiaSettingsV3;
+    if (!nav) return;
+    const host = nav.section(legacyPanel,"celia-v3-runtime","Runtime e fluxo ao vivo");
     let panel = legacyPanel.querySelector(`#${PANEL_ID}`);
     if (!panel) {
-      const legacyContent = legacyPanel.firstElementChild;
-      if (legacyContent) legacyContent.hidden = true;
       panel = document.createElement("section");
       panel.id = PANEL_ID;
       panel.setAttribute("aria-live", "polite");
       panel.style.cssText = "padding:4px 1px 10px;";
-      legacyPanel.append(panel);
+      host.append(panel);
     }
 
     // Fluxo ao vivo (antes uma caixa fixa no canto da tela): secao propria, fora do #celia-runtime-settings (que se reescreve a cada leitura).
@@ -110,11 +106,15 @@
       legenda.style.cssText = "margin:0 0 10px;color:rgba(255,255,255,.72);font-size:12px;line-height:1.45;";
       const caixa = document.createElement("div");
       fluxo.append(titulo, legenda, caixa);
-      legacyPanel.append(fluxo);
+      host.append(fluxo);
       fluxo._caixa = caixa;
     }
     if (window.celiaDebugFlow && typeof window.celiaDebugFlow.montarEm === "function" && fluxo._caixa) window.celiaDebugFlow.montarEm(fluxo._caixa);
 
+    if (!host.dataset.celiaRuntimeOpen) {
+      host.dataset.celiaRuntimeOpen = "true";
+      host.parentElement.addEventListener("celia-v3-open", () => refresh(panel));
+    }
     if (tab.getAttribute("aria-selected") === "true" && panel.dataset.initialized !== "true") {
       panel.dataset.initialized = "true";
       refresh(panel);

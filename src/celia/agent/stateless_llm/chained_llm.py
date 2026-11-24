@@ -153,6 +153,11 @@ class ChainedLLM(AsyncLLM):
         in_chars = len(system or "") + sum(len(str(m.get("content") or "")) for m in messages)
         skipped: list[str] = []
         links = sorted(self._links, key=lambda link: not link.local_gpu_job) if prefer_local else self._links
+        if self.brain == "jev":
+            from ...core.settings_preferences import get_preferences
+            preferred = get_preferences()["jev_model"]
+            if preferred:
+                links = sorted(links, key=lambda link: link.model != preferred)
         for link in links:
             if link.local_gpu_job and (self.mode != "persona" or not gpu_scheduler.enabled):
                 # Na rota persona a lista de ferramentas pertence ao Jev;

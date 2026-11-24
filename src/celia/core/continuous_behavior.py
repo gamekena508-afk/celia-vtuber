@@ -601,6 +601,9 @@ class ContinuousBehaviorRuntime:
 
     def get_profile_prompt(self) -> str:
         base = self._profile_manager.get_profile_prompt()
+        contextual = self._profile_settings[self.profile].contextual_prompt.strip()
+        if contextual:
+            base += "\n[Orientacao contextual do operador; nao altera identidade, fatos ou permissoes]\n" + contextual
         if self.profile not in self._customized_profiles:
             return base
         social = self._profile_settings[self.profile].social

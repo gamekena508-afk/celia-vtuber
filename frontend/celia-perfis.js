@@ -218,7 +218,7 @@
     } catch (_) { return null; }
   }
 
-  async function editarPerfil(id) {
+  async function editarPerfil(id, host = document.body) {
     const antigo = document.getElementById("celia-perfil-v6-editor");
     if (antigo) antigo.remove();
     const back = elemento("div", "", {
@@ -240,9 +240,10 @@
     painel.setAttribute("aria-modal", "true");
     painel.setAttribute("aria-label", "Configurações do perfil");
     back.append(painel);
-    document.body.append(back);
+    host.append(back);
     const limpezas = [];
     const fechar = () => { for (const f of limpezas) { try { f(); } catch (_) { /* nada a limpar */ } } back.remove(); };
+    if (host !== document.body) { back.style.position = "absolute"; back.style.zIndex = "10"; }
     back.addEventListener("click", (e) => { if (e.target === back) fechar(); });
     const heading = elemento("div", "", { display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" });
     heading.append(elemento("h2", "⚙ Perfil " + (PERFIS.find(x => x.id === id)?.nome || id), { fontSize: "19px", margin: "0 0 8px" }));
@@ -503,7 +504,7 @@
     function render() {
       if (!draft) return;
       form.replaceChildren(); tabs.replaceChildren();
-      const abas = [["social", "Essencial"], ["triggers", "Gatilhos"], ["gameplay", "Minecraft"]];
+      const abas = [["social", "Essencial"], ["prompt", "Prompt"], ["triggers", "Gatilhos"], ["gameplay", "Minecraft"]];
       if (id === SERIE_ID) abas.push(["serie", "Série"]);
       if (tab !== "serie" && serie.parar) serie.parar();
       for (const [name, title] of abas) {
@@ -514,7 +515,15 @@
       if (!ref.slider) montarCartao();
       atualizarCartao();
       cartao.style.display = tab === "serie" ? "none" : "";  // the Série tab needs the room; the chance card stays on every other tab
-      if (tab === "social") {
+      if (tab === "prompt") {
+        form.append(elemento("p", "Orientação contextual deste perfil. A identidade central e as permissões continuam protegidas."));
+        const prompt = document.createElement("textarea");
+        prompt.rows = 8; prompt.maxLength = 3000; prompt.value = draft.contextual_prompt || "";
+        prompt.setAttribute("aria-label", "Prompt contextual");
+        prompt.style.cssText = "width:100%;box-sizing:border-box;padding:10px;color:#fff;background:#0c182c;border:1px solid #47607b;border-radius:8px";
+        prompt.oninput = () => { draft.contextual_prompt = prompt.value; notify("Alterações não salvas"); };
+        form.append(prompt);
+      } else if (tab === "social") {
         const social = draft.social;
         field(form, social, ["interruption", "Permissão para interromper", 0, 100, "range", "Quanto ela se arrisca a falar por cima de você. 0 = nunca."]);
         field(form, social, ["silence_seconds", "Reação ao silêncio (s)", 2, 120, "number", "Segundos de silêncio (de VOCÊS DOIS) antes de ela poder puxar assunto."]);
@@ -648,6 +657,7 @@
     menu.appendChild(titulo);
 
     for (const perfil of PERFIS) {
+      if (perfil.id === "roteiro") continue; // preserve internal profile, hide shortcut
       const travado = TRAVADOS.has(perfil.id);
       const ativo = perfilAtual === perfil.id;
       const item = document.createElement("button");
@@ -803,6 +813,7 @@
     ler: lerPerfil,
     trocar: trocarPerfil,
     travados: () => [...TRAVADOS],
+    editar: editarPerfil,
   };
 
   new MutationObserver(instalar).observe(document.documentElement, { childList: true, subtree: true });

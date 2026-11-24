@@ -91,6 +91,7 @@ class GameplayV6(BaseModel):
 
 class ProfileSettingsV6(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    contextual_prompt: str = Field("", max_length=3000)
     social: SocialV6 = Field(default_factory=SocialV6)
     gameplay: GameplayV6 = Field(default_factory=GameplayV6)
     triggers: dict[str, TriggerV6] = Field(default_factory=dict)

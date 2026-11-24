@@ -64,7 +64,20 @@ def prepare_audio_payload(
     try:
         with open(audio_path, "rb") as audio_file:
             audio = cast(AudioSegment, AudioSegment.from_file(audio_file))
-        exported_audio = audio.export(format="wav")
+        from ..core.settings_preferences import get_preferences
+        import math
+        preferences = get_preferences()
+        speed = preferences["playback_speed"] if not forwarded else 1.0
+        volume = preferences["volume"] if not forwarded else 100
+        if speed != 1.0:
+            rendered = audio.export(format="wav", parameters=["-af", f"atempo={speed:.2f}"])
+            try:
+                audio = AudioSegment.from_file(rendered, format="wav")
+            finally:
+                rendered.close()
+        playback_audio = audio._spawn(bytes(len(audio.raw_data))) if volume == 0 else (
+            audio + (20 * math.log10(volume / 100)) if volume < 100 else audio)
+        exported_audio = playback_audio.export(format="wav")
         try:
             audio_bytes = cast(bytes, exported_audio.read())
         finally:

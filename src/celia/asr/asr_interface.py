@@ -1,6 +1,20 @@
 import abc
 import numpy as np
 import asyncio
+import threading
+import time
+
+_TRANSCRIPTIONS = {}
+_TRANSCRIPTION_LOCK = threading.Lock()
+
+def transcription_snapshot():
+    now = time.monotonic()
+    with _TRANSCRIPTION_LOCK:
+        jobs = list(_TRANSCRIPTIONS.values())
+    waiting = [t for state, t in jobs if state == "waiting"]
+    return {"waiting": len(waiting), "running": sum(state == "running" for state, _ in jobs),
+            "oldest_wait_ms": round(1000 * (now - min(waiting))) if waiting else 0}
+
 
 
 class ASRInterface(metaclass=abc.ABCMeta):
@@ -22,7 +36,23 @@ class ASRInterface(metaclass=abc.ABCMeta):
         """
         if audio.dtype != np.float32:
             audio = audio.astype(np.float32)
-        return await asyncio.to_thread(self.transcribe_np, audio)
+        job = object()
+        with _TRANSCRIPTION_LOCK:
+            _TRANSCRIPTIONS[job] = ("waiting", time.monotonic())
+        def run():
+            with _TRANSCRIPTION_LOCK:
+                _TRANSCRIPTIONS[job] = ("running", time.monotonic())
+            try:
+                return self.transcribe_np(audio)
+            finally:
+                with _TRANSCRIPTION_LOCK:
+                    _TRANSCRIPTIONS.pop(job, None)
+        try:
+            return await asyncio.to_thread(run)
+        finally:
+            with _TRANSCRIPTION_LOCK:
+                if _TRANSCRIPTIONS.get(job, ("", 0))[0] == "waiting":
+                    _TRANSCRIPTIONS.pop(job, None)
 
     @abc.abstractmethod
     def transcribe_np(self, audio: np.ndarray) -> str:

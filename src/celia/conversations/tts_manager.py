@@ -5,6 +5,7 @@ import re
 import threading
 import time
 import uuid
+import weakref
 from datetime import datetime
 from typing import List, Optional, Dict
 from loguru import logger
@@ -44,6 +45,15 @@ from ..core.latency_trace import latency_trace
 from ..core.gpu_scheduler import gpu_scheduler
 from .types import WebSocketSend
 
+
+_ACTIVE_TTS_MANAGERS = weakref.WeakSet()
+
+def tts_queue_snapshot():
+    managers = list(_ACTIVE_TTS_MANAGERS)
+    return {
+        "unfinished_tasks": sum(not task.done() for m in managers for task in m.task_list),
+        "queued_payloads": sum(m._payload_queue.qsize() for m in managers),
+    }
 
 class TTSTaskManager:
     """Enfileira TTS e entrega ao frontend em ordem.
@@ -86,6 +96,7 @@ class TTSTaskManager:
         # browser speech ids in delivery order so Roteiro can seal the whole
         # turn and advance only after every chunk really finishes.
         self._speech_ids_by_turn: Dict[str, Dict[int, str]] = {}
+        _ACTIVE_TTS_MANAGERS.add(self)
 
     async def speak(
         self,

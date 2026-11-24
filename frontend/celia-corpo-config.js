@@ -180,7 +180,7 @@
       status.textContent = "Fonte: " + source + " | " + (data.discord_connected ? "Célia em call" : "Célia fora da call") + " | " + (data.follow ? "Seguindo" : "Ficar aqui") + local;
     }
     async function refresh() {
-      if (saving || !box.isConnected) return;
+      if (saving || !box.isConnected || box.closest("[hidden]")) return;
       try {
         const r = await fetch("/bridge/audio-source", {cache:"no-store"});
         if (!r.ok) throw Error("HTTP "+r.status);
@@ -202,6 +202,7 @@
     mic.type="button"; mic.textContent="Ligar/desligar microfone local";
     mic.onclick=()=>window.__micToggle?.toggle();
     box.append(heading,select,label,mic,status);
+    // First read is deferred until the subpage becomes visible.
     setTimeout(refresh,0);
     const timer=setInterval(()=>{if(!box.isConnected)clearInterval(timer);else refresh();},1000);
     return box;
@@ -377,7 +378,7 @@
     const entrada = linha.querySelector('input[type="checkbox"]');
     if (!entrada) return;
     if (entrada.checked !== ligado) entrada.checked = ligado;
-    if (ligado) entrada.setAttribute("checked", ""); else entrada.removeAttribute("checked");
+    if (ligado && !entrada.hasAttribute("checked")) entrada.setAttribute("checked", ""); else if (!ligado && entrada.hasAttribute("checked")) entrada.removeAttribute("checked");
     const st = ligado ? "checked" : "unchecked";
     for (const el of linha.querySelectorAll("[data-state]")) if (el.dataset.state !== st) el.dataset.state = st;
   }
@@ -713,20 +714,18 @@
     const nota = document.createElement("p");
     nota.dataset.discordNota = "1";
     nota.style.cssText = "margin:6px 0 0;color:rgba(255,255,255,.62);font-size:12px;line-height:1.4;";
-    caixa.append(rotulo, grupo, nota, montarVADDiscord(), montarFilaDiscord());
+    caixa.append(rotulo, grupo, nota);
     lerDiscord();
     if (!discordTimer) discordTimer = setInterval(lerDiscord, 5000);
     return caixa;
   }
 
   function montar(dialogo) {
-    const aba = dialogo.querySelector('[role="tab"][data-value="live2d"]');
     const painel = dialogo.querySelector('[role="tabpanel"][id$="content-live2d"]');
-    if (aba) {
-      const w = document.createTreeWalker(aba, NodeFilter.SHOW_TEXT);
-      for (let n = w.nextNode(); n; n = w.nextNode()) if (n.nodeValue.trim() === "Live2D") n.nodeValue = "Corpo";
-    }
-    if (!painel || painel.querySelector("#celia-corpo-config")) return;
+    if (!painel) return;
+    const nav = window.celiaSettingsV3;
+    if (!nav) return;
+    const asr = nav.panel(dialogo, "asr"), tts = nav.panel(dialogo, "tts"), agent = nav.panel(dialogo, "agent");
     const modelo = painel.querySelector(".chakra-field__root:not([data-celia-opcao])");
     if (!modelo) return; // a casca ainda nao montou as linhas originais
     dialogo.classList.add("celia-config-corpo-dialogo");
@@ -744,6 +743,7 @@
         "}";
       document.head.append(css);
     }
+    if (!painel.querySelector("#celia-corpo-config")) {
     const secao = document.createElement("section");
     secao.id = "celia-corpo-config";
     secao.style.cssText = "padding:4px 0 10px;";
@@ -758,33 +758,42 @@
     stack2.append(clonarLinha(modelo, "Slime (você) sobre a cabeça", "slime"), slimeNota);
     secao.append(titulo("Slime"), stack2);
     const stack3 = stack.cloneNode(false);
-    stack3.append(clonarLinha(modelo, "Modo Minecraft (desligado: live só de conversa)", "modo_minecraft"), clonarLinha(modelo, "HUD Minecraft", "hud_minecraft"));
-    secao.append(titulo("Minecraft"), stack3);
-    const stack4 = stack.cloneNode(false);
-    stack4.append(clonarLinha(modelo, "Minha voz na live (use fone)", "voz_publico"));
-    secao.append(titulo("Voz"), stack4);
-    const ouvido = document.createElement('button');
-    ouvido.type='button'; ouvido.textContent='Ligar ouvido (Tagarela)';
-    ouvido.style.cssText='padding:8px 12px;border:1px solid #6580ac;border-radius:8px;cursor:pointer';
-    ouvido.onclick=async()=>{
-      ouvido.disabled=true;
-      try{
-        const r=await fetch('/bridge/live/tagarela/start',{method:'POST'});
-        if(!r.ok)throw Error('Não foi possível ligar o ouvido');
-        const d=await r.json();ouvido.textContent=d.state==='running'?'Ouvido ligado':'Ouvido iniciando…';
-      }catch(e){ouvido.textContent='Tentar ligar ouvido novamente';}
-      finally{ouvido.disabled=false;}
-    };
-    stack4.append(ouvido, montarOrigemAudio());
-    const stack5 = stack.cloneNode(false);
-    stack5.append(clonarLinha(modelo, "Enquete da live (mobile)", "enquete_mobile"));
-    stack5.append(clonarLinha(modelo, "Célia lê o chat do TikTok", "chat_tiktok"));
-    secao.append(titulo("Mobile"), stack5);
-    secao.append(titulo("Discord"), montarDiscord());
+    stack3.append(clonarLinha(modelo, "HUD Minecraft", "hud_minecraft"));
+    secao.append(titulo("HUD Minecraft"), stack3);
     painel.append(secao);
+    medirSlime();
+    }
+    if (asr && !asr.querySelector("#celia-v3-capture")) {
+      const capture = nav.section(asr, "celia-v3-capture", "Origem e captura");
+      capture.append(montarOrigemAudio(), montarDiscord());
+      const ouvido = document.createElement("button");
+      ouvido.type="button"; ouvido.textContent="Ligar ouvido (Tagarela)";
+      ouvido.className="celia-v3-link";
+      ouvido.onclick=async()=>{
+        ouvido.disabled=true;
+        try {
+          const r=await fetch("/bridge/live/tagarela/start",{method:"POST"});
+          if(!r.ok)throw Error("HTTP "+r.status);
+          const d=await r.json(); ouvido.textContent=d.state==="running"?"Ouvido ligado":"Ouvido iniciando.";
+        } catch(e){ouvido.textContent="Tentar ligar ouvido novamente";}
+        finally{ouvido.disabled=false;}
+      };
+      capture.append(ouvido);
+      nav.section(asr,"celia-v3-vad","VAD — Discord").append(montarVADDiscord());
+    }
+    if (tts && !tts.querySelector("#celia-v3-live-voice")) {
+      const out=nav.section(tts,"celia-v3-live-voice","Monitoramento de voz na live");
+      out.append(clonarLinha(modelo,"Minha voz na live (use fone)","voz_publico"));
+    }
+    if (agent && !agent.querySelector("#celia-v3-call")) {
+      nav.section(agent,"celia-v3-call","Prioridades e fila de fala — Discord").append(montarFilaDiscord());
+      const live=nav.section(agent,"celia-v3-live-game","Minecraft e Live");
+      live.append(clonarLinha(modelo,"Modo Minecraft (desligado: live só de conversa)","modo_minecraft"),
+        clonarLinha(modelo,"Enquete da live (mobile)","enquete_mobile"),
+        clonarLinha(modelo,"Célia lê o chat do TikTok","chat_tiktok"));
+    }
     sincronizarSwitches();
     pintarSlimeStatus();
-    medirSlime();
   }
 
   let agendado = false;

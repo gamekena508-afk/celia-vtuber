@@ -164,3 +164,6 @@ Foram retirados porque dependem de partes do projeto que não estão neste repos
 
 - `tests/test_video_memoria_pipeline.py`
 
+## Settings V3
+
+Execute `python -m pytest -q tests/test_settings_v3.py tests/test_settings_preferences.py tests/test_observability.py`. Os testes usam DOM isolado, áudio sintético e APIs locais simuladas, sem iniciar modelos ou bots. A validação de chamadas Discord depende de um adaptador distribuído separadamente.

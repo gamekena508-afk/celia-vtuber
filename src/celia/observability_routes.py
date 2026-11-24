@@ -218,6 +218,66 @@ def init_observability_routes(context=None) -> APIRouter:
         _require_loopback(request)
         return topology_snapshot(context)
 
+    def jev_catalog():
+        engine = getattr(context, "agent_engine", None)
+        llm = getattr(engine, "_tool_llm", None)
+        links = getattr(llm, "_links", ())
+        return list(dict.fromkeys(link.model for link in links
+                                  if not getattr(link, "local_gpu_job", False)))
+
+    @router.get("/settings-preferences")
+    async def settings_preferences(request: Request):
+        _require_loopback(request)
+        from .core.settings_preferences import get_preferences
+        return {"preferences": get_preferences(), "jev_models": jev_catalog()}
+
+    @router.put("/settings-preferences")
+    async def save_settings_preferences(request: Request):
+        _require_loopback(request)
+        from .core.settings_preferences import update_preferences
+        # JSON only, and reject cross-origin browser writes.
+        origin = request.headers.get("origin")
+        if origin and origin.rstrip("/") != str(request.base_url).rstrip("/"):
+            raise HTTPException(403, "Cross-origin settings write")
+        if request.headers.get("content-type", "").split(";")[0] != "application/json":
+            raise HTTPException(415, "JSON required")
+        try:
+            return {"preferences": update_preferences(await request.json(), allowed_models=jev_catalog()),
+                    "jev_models": jev_catalog()}
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @router.get("/settings-status")
+    async def settings_status(request: Request):
+        _require_loopback(request)
+        from .core.speech_coordinator import speech_coordinator
+        from .asr.asr_interface import transcription_snapshot
+        from .conversations.tts_manager import tts_queue_snapshot
+
+        sources = (
+            "direct_user", "discord_direct", "critical_game_event", "system",
+            "bridge", "game_commentary", "live", "ambient",
+        )
+        counts = dict.fromkeys(("pending", "generated", "dispatched", "playing", "cancel_requested"), 0)
+        for item in speech_coordinator.snapshot()["active"]:
+            if item["status"] in counts:
+                counts[item["status"]] += 1
+        character = getattr(context, "character_config", None)
+        asr_config = getattr(character, "asr_config", None)
+        engine_name = getattr(asr_config, "asr_model", None)
+        engine_config = getattr(asr_config, engine_name or "", None)
+        loaded_asr = getattr(context, "asr_engine", None)
+        return {
+            "priorities": {source: speech_coordinator.source_priority(source) for source in sources},
+            "speech": counts,
+            "tts_queue": tts_queue_snapshot(),
+            "asr": {"engine": engine_name,
+                    "model": getattr(loaded_asr, "model", None) if isinstance(getattr(loaded_asr, "model", None), str) else None,
+                    "configured_model": getattr(engine_config, "model", None),
+                    "queue_state": "Entrada ASR assíncrona do núcleo",
+                    **transcription_snapshot()},
+        }
+
     @router.get("/snapshot")
     async def snapshot(request: Request, after: int = 0):
         _require_loopback(request)

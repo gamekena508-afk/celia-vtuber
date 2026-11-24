@@ -102,7 +102,8 @@
       secao.id = "celia-tts-settings";
       secao.setAttribute("aria-live", "polite");
       secao.style.cssText = "padding:4px 1px 10px;";
-      painel.append(secao);
+      const host = window.celiaSettingsV3?.section(painel,"celia-v3-presets","Presets da voz");
+      (host || painel).append(secao);
     }
     const aberta = tab.getAttribute("aria-selected") === "true";
     const velho = Date.now() - Number(secao.dataset.lidoEm || 0) > 5000;
